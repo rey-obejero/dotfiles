@@ -1,0 +1,62 @@
+{
+  "version": 3,
+  "skills": {
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "skillFolderHash": "76a98a285cb0434f3d39e1a873823556330e398b",
+      "installedAt": "2026-06-17T16:32:38.611Z",
+      "updatedAt": "2026-07-11T13:39:34.413Z"
+    },
+    "handoff": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "skillPath": "skills/productivity/handoff/SKILL.md",
+      "skillFolderHash": "3f7df8e717e41dfd6eacd03d47319a2e01248ffb",
+      "installedAt": "2026-06-22T03:09:12.692Z",
+      "updatedAt": "2026-07-11T13:39:36.875Z"
+    },
+    "create-agentsmd": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/github/awesome-copilot.git",
+      "skillPath": "skills/create-agentsmd/SKILL.md",
+      "skillFolderHash": "290ab8ae85ba8695e9bceb674e74177e76f8633d",
+      "installedAt": "2026-06-24T11:00:41.331Z",
+      "updatedAt": "2026-06-24T11:00:41.331Z"
+    },
+    "documentation-and-adrs": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/addyosmani/agent-skills.git",
+      "skillPath": "skills/documentation-and-adrs/SKILL.md",
+      "skillFolderHash": "df79e5ccc01e5169e61ec0c98196d171617b4458",
+      "installedAt": "2026-06-25T08:47:15.971Z",
+      "updatedAt": "2026-06-25T08:47:15.971Z"
+    },
+    "excalidraw-diagram-generator": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/github/awesome-copilot.git",
+      "skillPath": "skills/excalidraw-diagram-generator/SKILL.md",
+      "skillFolderHash": "508522bb5a9950bbbac3c3a680bdc2fed717a5d8",
+      "installedAt": "2026-06-25T08:47:20.573Z",
+      "updatedAt": "2026-06-25T08:47:20.573Z"
+    },
+    "brainstorming": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "skillPath": "skills/brainstorming/SKILL.md",
+      "skillFolderHash": "b14f49a55a8387cfa12ac89794ab79698d7fddbb",
+      "installedAt": "2026-07-11T13:42:29.116Z",
+      "updatedAt": "2026-07-11T13:42:29.116Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  }
+}
