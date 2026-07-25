@@ -1,0 +1,133 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Preferred terminal shell for command executions
+  "shell": "zsh",
+
+  // Global default model fallback
+  "model": "opencode-go/qwen3.7-plus",
+
+  // Agent roles setup
+  "agent": {
+    // Read-only agent
+    "plan": {
+      "mode": "primary",
+      "model": "opencode-go/qwen3.7-max",
+      "permission": {
+        // Prevents modifying code files during design
+        "edit": "deny",
+
+        // Restricts dynamic skill execution
+        "skill": "deny",
+
+        // Prevents writing tracking checklists
+        "todowrite": "deny",
+
+        // Blocks sub-task management creation
+        "task": "deny",
+
+        // Enforces completely non-destructive planning
+        "bash": "deny",
+      },
+    },
+
+    // High-throughput workhorse agent
+    "build": {
+      "mode": "primary",
+      "model": "opencode-go/minimax-m3",
+    },
+
+    // Versatile helper agent
+    "general": {
+      "mode": "subagent",
+      "model": "opencode-go/qwen3.7-plus",
+    },
+
+    // Fast discovery engine
+    "explore": {
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+    },
+
+    // Reconnaissance agent
+    "scout": {
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+    },
+  },
+
+  // Forces new interactive sessions to boot into the 'plan' agent by default
+  "default_agent": "plan",
+
+  // Automatically format modified files on write
+  "formatter": true,
+
+  // Enable Language Server Protocol integrations for code intelligence
+  "lsp": true,
+
+  // Tool-level and terminal permission boundaries
+  "permission": {
+    "*": "allow",
+
+    // Blocks autonomous network page fetching
+    "webfetch": "ask",
+
+    // Blocks live web searches to enforce local context usage
+    "websearch": "ask",
+    "bash": {
+      // Prompts user permission for any unlisted terminal command
+      "*": "ask",
+
+      // Quick diagnostic: check repository changes
+      "git status*": "allow",
+
+      // Quick diagnostic: view code modifications
+      "git diff*": "allow",
+
+      // Quick diagnostic: check commit history
+      "git log*": "allow",
+
+      // Safety lock: prevents automatic code commits
+      "git commit*": "deny",
+
+      // Safety lock: prevents remote code pushing
+      "git push*": "deny",
+
+      // Safety lock: prevents version tagging
+      "git tag*": "deny",
+
+      // Safety lock: prevents destructive state resets
+      "git reset*": "deny",
+
+      // Safety lock: prevents untracked file deletion
+      "git clean*": "deny",
+
+      // Safety lock: prevents automated GitHub PR management
+      "gh pr*": "deny",
+    },
+  },
+
+  // Active extensions, context managers, and safety net plugins
+  "plugin": [
+    // Direct Context Protocol integration
+    "@tarquinen/opencode-dcp@latest",
+
+    // Extra safety rails for execution
+    "cc-safety-net",
+
+    // Secrets and environment security guard
+    "envsitter-guard@latest",
+
+    // Respects custom ignore patterns
+    "opencode-ignore",
+
+    // Code snippet extraction utilities
+    "opencode-snip@latest",
+
+    // Tmux multiplexer integration
+    "opentmux",
+
+    // Long-term context and memory management
+    "opencode-mem",
+  ],
+}
