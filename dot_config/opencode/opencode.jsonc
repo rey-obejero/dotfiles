@@ -35,6 +35,9 @@
     "build": {
       "mode": "primary",
       "model": "opencode-go/minimax-m3",
+      "permission": {
+        "* build*": "allow",
+      },
     },
 
     // Versatile helper agent
