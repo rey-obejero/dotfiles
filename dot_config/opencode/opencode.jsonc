@@ -5,14 +5,14 @@
   "shell": "zsh",
 
   // Global default model fallback
-  "model": "opencode-go/qwen3.7-plus",
+  "model": "opencode-go/deepseek-v4-flash",
 
   // Agent roles setup
   "agent": {
     // Read-only agent
     "plan": {
       "mode": "primary",
-      "model": "opencode-go/qwen3.7-plus",
+      "model": "opencode-go/deepseek-v4-flash",
       "permission": {
         // Prevents modifying code files during design
         "edit": "deny",
@@ -34,7 +34,7 @@
     // High-throughput workhorse agent
     "build": {
       "mode": "primary",
-      "model": "opencode-go/minimax-m3",
+      "model": "opencode-go/deepseek-v4-flash",
       "permission": {
         "* build*": "allow",
       },
@@ -43,7 +43,7 @@
     // Versatile helper agent
     "general": {
       "mode": "subagent",
-      "model": "opencode-go/qwen3.7-plus",
+      "model": "opencode-go/deepseek-v4-flash",
     },
 
     // Fast discovery engine
