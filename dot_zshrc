@@ -71,3 +71,11 @@ function zle-line-init() {
 zle -N zle-line-init
 
 eval "$(zoxide init zsh)"
+
+# pnpm
+export PNPM_HOME="/home/9x14to03/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end
