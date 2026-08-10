@@ -27,7 +27,20 @@
         "task": "deny",
 
         // Enforces completely non-destructive planning
-        "bash": "deny",
+        "bash": {
+          "*": "deny",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "grep *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "cat *": "allow",
+          "ls *": "allow",
+          "ps *": "allow",
+          "bash -n*": "allow",
+          "caddy validate*": "allow",
+        },
       },
     },
 
@@ -36,7 +49,14 @@
       "mode": "primary",
       "model": "opencode-go/deepseek-v4-flash",
       "permission": {
-        "* build*": "allow",
+        "npm run build*": "allow",
+        "npm run lint*": "allow",
+        "pnpm build*": "allow",
+        "pnpm lint*": "allow",
+        "pnpm dev*": "allow",
+        "pnpm install*": "allow",
+        "pnpm test*": "allow",
+        "dotnet build*": "allow",
       },
     },
 
@@ -105,8 +125,23 @@
       // Safety lock: prevents untracked file deletion
       "git clean*": "deny",
 
+      "git stash*": "deny",
+
       // Safety lock: prevents automated GitHub PR management
       "gh pr*": "deny",
+
+      "grep *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "cat *": "allow",
+      "ls *": "allow",
+      "ps *": "allow",
+      "ss *": "allow",
+      "sleep *": "allow",
+      "seq *": "allow",
+      "bash -n*": "allow",
+      "echo *": "allow",
+      "curl *": "allow",
     },
   },
 
