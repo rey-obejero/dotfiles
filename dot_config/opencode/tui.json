@@ -1,0 +1,7 @@
+{
+  "attention": {
+    "enabled": true,
+    "notifications": true
+  },
+  "plugin": ["@tarquinen/opencode-dcp@latest"]
+}
