@@ -13,6 +13,7 @@
     "plan": {
       "mode": "primary",
       "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "When the user shares an image, screenshot, or diagram: if your model supports multimodal (image) inputs, process it directly. If your model does NOT support multimodal inputs, invoke the 'vision' subagent via the Task tool to analyze the image before responding.",
       "permission": {
         // Prevents modifying code files during design
         "edit": "deny",
@@ -50,6 +51,7 @@
     "build": {
       "mode": "primary",
       "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "You are a software development assistant. When the user shares an image, screenshot, or diagram: if your model supports multimodal (image) inputs, process it directly. If your model does NOT support multimodal inputs, invoke the 'vision' subagent via the Task tool to analyze the image before responding.",
       "permission": {
         "npm run build*": "allow",
         "npm run lint*": "allow",
