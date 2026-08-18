@@ -1,1 +1,0 @@
-When the user shares an image, screenshot, or diagram: if your model supports multimodal (image) inputs, process it directly. If your model does NOT support multimodal inputs, invoke the 'vision' subagent via the Task tool to analyze the image before responding.
