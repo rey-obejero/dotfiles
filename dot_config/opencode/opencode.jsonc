@@ -167,7 +167,5 @@
 
     // Long-term context and memory management
     "opencode-mem",
-
-    "@mohak34/opencode-notifier@latest",
   ],
 }
