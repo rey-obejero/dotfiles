@@ -24,10 +24,8 @@
         // Prevents writing tracking checklists
         "todowrite": "deny",
 
-        "task": {
-          "*": "deny",
-          "vision": "allow",
-        },
+        // Blocks sub-task management creation
+        "task": "deny",
 
         // Enforces completely non-destructive planning
         "bash": {
@@ -80,14 +78,6 @@
     "scout": {
       "mode": "subagent",
       "model": "opencode-go/deepseek-v4-flash",
-    },
-
-    // Multimodal agent
-    "vision": {
-      "mode": "subagent",
-      "model": "opencode-go/mimo-v2.5",
-      "hidden": true,
-      "description": "Analyze images, screenshots, diagrams, charts, and other visual inputs. Return precise textual observations to the calling agent.",
     },
   },
 
