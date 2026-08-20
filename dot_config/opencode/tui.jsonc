@@ -1,0 +1,9 @@
+{
+  // OpenCode Quota: tuiCommandDisplay chooses whether native TUI command output appears in the session transcript or a local popup dialog.
+  // OpenCode Quota: loads the TUI sidebar, compact status, and local commands.
+  "theme_mode": "light",                  // Pin light mode (override terminal auto-detect)
+  "plugin": [
+    "@tarquinen/opencode-dcp@latest",     // Direct Context Protocol integration
+    "@slkiser/opencode-quota",            // Quota/token usage — sidebar + compact status (Node >= 22)
+  ],
+}
