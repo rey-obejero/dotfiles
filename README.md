@@ -2,6 +2,8 @@
 
 Machine-agnostic, transferrable dotfiles managed with [chezmoi](https://www.chezmoi.io/).
 
+![Screenshot](./assets/screenshot.png)
+
 ## Specifications
 
 - **Terminal**: WezTerm
@@ -19,15 +21,15 @@ These are not hardcoded. They are prompted once on `chezmoi init` and stored in
 in `.chezmoi.toml.example` in this repo (it is not read by chezmoi — it is a
 `.env.example`-style reference).
 
-| Key | Meaning | Default |
-| --- | --- | --- |
-| `opencode_model` | Default model for **all** OpenCode agents | `opencode/deepseek-v4-flash-free` |
-| `opencode_model_plan` | Override for the `plan` agent only | inherits `opencode_model` |
-| `opencode_model_build` | Override for the `build` agent only | inherits `opencode_model` |
-| `opencode_model_general` | Override for the `general` agent only | inherits `opencode_model` |
-| `opencode_model_explore` | Override for the `explore` agent only | inherits `opencode_model` |
-| `opencode_model_scout` | Override for the `scout` agent only | inherits `opencode_model` |
-| `jdtls_path` | Absolute path to your `eclipse.jdt.ls` clone | **required, no default** |
+| Key                      | Meaning                                      | Default                           |
+| ------------------------ | -------------------------------------------- | --------------------------------- |
+| `opencode_model`         | Default model for **all** OpenCode agents    | `opencode/deepseek-v4-flash-free` |
+| `opencode_model_plan`    | Override for the `plan` agent only           | inherits `opencode_model`         |
+| `opencode_model_build`   | Override for the `build` agent only          | inherits `opencode_model`         |
+| `opencode_model_general` | Override for the `general` agent only        | inherits `opencode_model`         |
+| `opencode_model_explore` | Override for the `explore` agent only        | inherits `opencode_model`         |
+| `opencode_model_scout`   | Override for the `scout` agent only          | inherits `opencode_model`         |
+| `jdtls_path`             | Absolute path to your `eclipse.jdt.ls` clone | **required, no default**          |
 
 Setting only `opencode_model` makes every agent use that one model. To diverge a
 single agent, add its key in `~/.config/chezmoi/chezmoi.toml` and re-run
@@ -68,18 +70,18 @@ Answers live in `~/.config/chezmoi/chezmoi.toml` (or
 prompts use `promptStringOnce`, `chezmoi init` only re-asks a key that is **missing**
 from that file — so to reset, you delete the value(s) first.
 
-* **Re-prompt everything (full reset):**
+- **Re-prompt everything (full reset):**
 
   ```sh
   rm "${XDG_CONFIG_HOME:-$HOME/.config}/chezmoi/chezmoi.toml"
   chezmoi init
   ```
 
-* **Re-prompt a single value:** open `chezmoi edit-config`, delete just that one
+- **Re-prompt a single value:** open `chezmoi edit-config`, delete just that one
   line (e.g. `jdtls_path = "..."`), save, then run `chezmoi init` — only the
   missing key is asked again.
 
-* **`jdtls_path` is now required.** Leaving it empty aborts `chezmoi init` with
+- **`jdtls_path` is now required.** Leaving it empty aborts `chezmoi init` with
   `jdtls_path cannot be empty`. Just run `chezmoi init` again and type the real
   path to your `eclipse.jdt.ls` clone.
 
