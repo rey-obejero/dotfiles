@@ -4,6 +4,21 @@ Machine-agnostic, transferrable dotfiles managed with [chezmoi](https://www.chez
 
 ![Screenshot](./assets/screenshot.png)
 
+## Table of Contents
+
+- [Specifications](#specifications)
+- [Configuration](#configuration)
+  - [Resetting Your Configuration](#resetting-your-configuration)
+- [Getting Started](#getting-started)
+- [Daily Editing](#daily-editing)
+- [Reverting an Applied Modification](#reverting-an-applied-modification)
+- [Tmux Plugins](#tmux-plugins)
+- [Tmux Keybindings](#tmux-keybindings)
+- [Typical Daily Workflow](#typical-daily-workflow)
+- [Updating](#updating)
+- [Planned](#planned)
+- [Note](#note)
+
 ## Specifications
 
 - **Terminal**: [WezTerm](https://wezterm.org/)
