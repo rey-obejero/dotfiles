@@ -6,17 +6,17 @@ Machine-agnostic, transferrable dotfiles managed with [chezmoi](https://www.chez
 
 ## Specifications
 
-- **Terminal**: WezTerm
-- **Operating System**: Fedora (via WSL) — **Linux only, no macOS support**
-- **Shell**: ZSH with the Oh My Zsh framework and the Starship prompt
-- **Multiplexer**: Tmux
-- **Code Editor**: Neovim with the LazyVim distribution
-- **AI Agent**: OpenCode CLI
-- **Dotfiles Manager**: chezmoi
+- **Terminal**: [WezTerm](https://wezterm.org/)
+- **Operating System**: Fedora (via [WSL2](https://learn.microsoft.com/en-us/windows/wsl/))
+- **Shell**: [Zsh](https://www.zsh.org/) with the [Oh My Zsh framework](https://ohmyz.sh/) and the [Starship prompt](https://starship.rs/)
+- **Multiplexer**: [Tmux](https://tmux.app/)
+- **Code Editor**: [Neovim](https://neovim.io/) with the [LazyVim distribution](https://www.lazyvim.org/)
+- **AI Agent Harness**: [OpenCode CLI](https://opencode.ai/)
+- **Dotfiles Manager**: [chezmoi](https://www.chezmoi.io/)
 
-## Configurable values (machine-specific)
+## Configuration
 
-These are not hardcoded. They are prompted once on `chezmoi init` and stored in
+These values are not hardcoded. They are prompted once on `chezmoi init` and stored in
 `~/.config/chezmoi/chezmoi.toml` (`[data]` section). A documented example lives
 in `.chezmoi.toml.example` in this repo (it is not read by chezmoi — it is a
 `.env.example`-style reference).
@@ -35,10 +35,10 @@ Setting only `opencode_model` makes every agent use that one model. To diverge a
 single agent, add its key in `~/.config/chezmoi/chezmoi.toml` and re-run
 `chezmoi apply`.
 
-The Java LSP intentionally does **not** use Mason — the `eclipse.jdt.ls` host is
+The Java LSP intentionally does **not** use Mason — the [eclipse.jdt.ls](https://projects.eclipse.org/projects/eclipse.jdt.ls/) host is
 slow, so we rely on a local clone you point `jdtls_path` at.
 
-## First-time setup on a new machine
+## Getting Started
 
 ```sh
 chezmoi init --apply <your-repo-url>
@@ -63,7 +63,7 @@ chezmoi apply                # re-render everything
 `chezmoi edit-config` opens the file in your editor (already auto-aplying on save
 via the `[edit]` settings), so just change a line and `:w`.
 
-### Resetting your configuration
+### Resetting Your Configuration
 
 Answers live in `~/.config/chezmoi/chezmoi.toml` (or
 `$XDG_CONFIG_HOME/chezmoi/chezmoi.toml` if `XDG_CONFIG_HOME` is set). Because the
@@ -85,7 +85,7 @@ from that file — so to reset, you delete the value(s) first.
   `jdtls_path cannot be empty`. Just run `chezmoi init` again and type the real
   path to your `eclipse.jdt.ls` clone.
 
-## Daily editing
+## Daily Editing
 
 You have two auto-applying paths — both apply on save, no manual step needed:
 
@@ -98,7 +98,7 @@ You have two auto-applying paths — both apply on save, no manual step needed:
 
 Inspect what changed before/after with `chezmoi diff`.
 
-## Gotcha: discarding a change you applied
+## Reverting an Applied Modification
 
 Auto-apply means saving the source file immediately updates the real target
 (e.g. `~/.zshrc`). If you then decide you don't want it and revert the source
@@ -112,7 +112,7 @@ chezmoi apply    # overwrites the target with the reverted blueprint
 
 `chezmoi apply` always makes the target match the blueprint — it is the fix.
 
-## tmux plugins
+## Tmux Plugins
 
 The `dot_tmux/plugins/**` tree is listed in `.chezmoiignore` and is **not**
 committed. Instead it is installed automatically by `run_once_after_install-tpm.sh`
@@ -120,13 +120,49 @@ on first `chezmoi apply`. If you later add a plugin to `dot_tmux.conf`, you can
 still run `prefix + I` (or just `chezmoi apply` re-runs the script only if its
 hash changed — for new plugins use `prefix + I`).
 
+## Tmux Keybindings
+
+`<prefix>` is `C-b` (Ctrl-b) by default. The custom binds below are defined in
+`dot_tmux.conf`; the rest are provided by `tmux-sensible` and `tmux-resurrect`.
+
+| Key                                   | Action                                                                  | Defined by     |
+| ------------------------------------- | ----------------------------------------------------------------------- | -------------- |
+| `prefix + c`                          | New window **after** the current one (`new-window -a`)                  | custom         |
+| `prefix + C`                          | New window **before** the current one (`new-window -b`)                 | custom         |
+| `prefix + b`                          | Jump to the **last** (previously active) window (`last-window`)         | custom         |
+| `prefix + <` / `prefix + >`           | Move current window left / right, **keeping focus** on it               | custom         |
+| `prefix + &`                          | Kill the current window (with confirmation)                             | custom         |
+| `prefix + K`                          | Kill the entire tmux server (with confirmation)                         | custom         |
+| `prefix + R`                          | Reload the tmux config                                                  | tmux-sensible  |
+| `prefix + C-p` / `prefix + C-n`       | Previous / next window                                                  | tmux-sensible  |
+| `prefix + Ctrl-s` / `prefix + Ctrl-r` | Save / restore the session                                              | tmux-resurrect |
+
+## Typical Daily Workflow
+
+A day-to-day flow using this setup:
+
+1. **Start a session.** Launch Tmux, e.g. `tmux new -s work` (or just `tmux`).
+2. **Open Neovim.** Inside the first window run `nvim` to begin editing.
+3. **Open new windows.** Split work across windows with `prefix + c` (after) or
+   `prefix + b` (before).
+4. **Organize windows.** Reorder them with `prefix + <` / `prefix + >`.
+5. **Run Tmux commands.** From inside Tmux open the command prompt with
+   `prefix + :`, or run tmux commands directly from the shell.
+6. **Save the session.** Persist the layout with `prefix + Ctrl-s`
+   (tmux-resurrect).
+7. **Detach or kill.** Leave with `prefix + d` (detach) or tear everything down
+   with `prefix + K` (kill server).
+8. **Restore later.** After a restart, `prefix + Ctrl-r` brings the saved
+   session back. Config edits reload instantly via `prefix + R` or
+   `chezmoi apply`.
+
 ## Updating
 
 ```sh
 chezmoi update --apply     # pull latest repo + apply
 ```
 
-## TODO
+## Planned
 
 - Add a minimal script to automate resetting the chezmoi configuration values
   (currently done manually via `rm` + `chezmoi init`, or by deleting a single
@@ -135,4 +171,4 @@ chezmoi update --apply     # pull latest repo + apply
 ## Note
 
 This configuration is Linux-only; `java.lua` hardcodes `config_linux` for
-eclipse.jdt.ls and will not select a macOS config directory.
+[eclipse.jdt.ls](https://projects.eclipse.org/projects/eclipse.jdt.ls/).
