@@ -4,7 +4,7 @@
 
 # Zsh native path array injection
 typeset -U path
-path=("$HOME/.local/bin" "$HOME/bin" "/home/9x14to03/.opencode/bin" $path)
+path=("$HOME/.local/bin" "$HOME/bin" "$HOME/.opencode/bin" $path)
 export PATH
 
 export VISUAL=nvim
@@ -73,7 +73,7 @@ zle -N zle-line-init
 eval "$(zoxide init zsh)"
 
 # pnpm
-export PNPM_HOME="/home/9x14to03/.local/share/pnpm"
+export PNPM_HOME="$HOME/.local/share/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME/bin:"*) ;;
   *) export PATH="$PNPM_HOME/bin:$PATH" ;;

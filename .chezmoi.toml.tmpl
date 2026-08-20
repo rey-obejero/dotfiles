@@ -1,0 +1,28 @@
+# chezmoi configuration
+#
+# This file is rendered from .chezmoi.toml.tmpl on `chezmoi init`.
+# It stores machine-specific answers. Edit it later with `chezmoi edit-config`
+# or `nvim ~/.config/chezmoi/chezmoi.toml`.
+
+[data]
+
+# Default OpenCode model for all agents.
+opencode_model = "{{ promptStringOnce . "opencode_model" "Default OpenCode model?" "opencode/deepseek-v4-flash-free" }}"
+
+# Optional per-agent overrides. Leave empty to inherit opencode_model.
+opencode_model_plan = "{{ promptStringOnce . "opencode_model_plan" "Model for the plan agent? (empty = default)" "" }}"
+opencode_model_build = "{{ promptStringOnce . "opencode_model_build" "Model for the build agent? (empty = default)" "" }}"
+opencode_model_general = "{{ promptStringOnce . "opencode_model_general" "Model for the general agent? (empty = default)" "" }}"
+opencode_model_explore = "{{ promptStringOnce . "opencode_model_explore" "Model for the explore agent? (empty = default)" "" }}"
+opencode_model_scout = "{{ promptStringOnce . "opencode_model_scout" "Model for the scout agent? (empty = default)" "" }}"
+
+# Absolute path to your eclipse.jdtls clone. Required — empty input aborts init.
+{{ $jdtls_path := promptStringOnce . "jdtls_path" "Absolute path to eclipse.jdt.ls clone?" -}}
+{{- if eq $jdtls_path "" }}{{ warnf "jdtls_path cannot be empty - run chezmoi init again and provide your eclipse.jdt.ls clone path" }}{{ exit 1 }}{{ end }}
+jdtls_path = "{{ $jdtls_path }}"
+
+# Make `chezmoi edit <file>` auto-apply on every save (no need for --apply/--watch).
+[edit]
+  command = "nvim"
+  apply = true
+  watch = true

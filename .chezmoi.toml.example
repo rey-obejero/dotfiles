@@ -1,0 +1,31 @@
+# chezmoi configuration (EXAMPLE)
+#
+# This is NOT read by chezmoi. It documents the keys that .chezmoi.toml.tmpl
+# will prompt you for on `chezmoi init`. Copy the values you want into your
+# real ~/.config/chezmoi/chezmoi.toml after init, or answer the prompts.
+#
+# All [data] keys are referenced by templates in this repo:
+#   - opencode_model        -> default model for every agent in opencode.jsonc
+#   - opencode_model_plan   -> optional override for the plan agent
+#   - opencode_model_build  -> optional override for the build agent
+#   - opencode_model_general-> optional override for the general agent
+#   - opencode_model_explore-> optional override for the explore agent
+#   - opencode_model_scout  -> optional override for the scout agent
+#   - jdtls_path            -> absolute path to your eclipse.jdt.ls clone
+
+[data]
+
+opencode_model = "opencode/deepseek-v4-flash-free"
+# opencode_model_plan = "opencode/deepseek-v4-flash-free"
+# opencode_model_build = "opencode/deepseek-v4-flash-free"
+# opencode_model_general = "opencode/deepseek-v4-flash-free"
+# opencode_model_explore = "opencode/deepseek-v4-flash-free"
+# opencode_model_scout = "opencode/deepseek-v4-flash-free"
+
+# No default is assumed. Point this at wherever you cloned eclipse.jdt.ls.
+jdtls_path = "/home/youruser/Software/Source/github.com/eclipse-jdtls/eclipse.jdt.ls"
+
+[edit]
+  command = "nvim"
+  apply = true
+  watch = true
