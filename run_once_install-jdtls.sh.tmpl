@@ -1,0 +1,36 @@
+{{- if eq (index . "jdtls_mode" | default "manual") "auto" -}}
+#!/bin/sh
+# Auto-install Eclipse JDT Language Server from this repo's GitHub Releases.
+# chezmoi run_once_ script: executed once per unique content hash.
+# Renders to empty (and is skipped) unless jdtls_mode == "auto".
+
+set -eu
+
+OWNER_REPO="rey-obejero/dotfiles"
+JDTLS_TAG="jdtls-1.58.0-202604151538"
+ASSET="jdt-language-server-${JDTLS_TAG#jdtls-}.tar.gz"
+
+INSTALL_ROOT="${HOME}/.local/share/jdtls"
+VERSION_DIR="${INSTALL_ROOT}/${JDTLS_TAG}"
+CURRENT_LINK="${INSTALL_ROOT}/current"
+
+# Idempotent: skip if the launcher jar is already present under current.
+if [ -d "$CURRENT_LINK/plugins" ] \
+   && ls "$CURRENT_LINK"/plugins/org.eclipse.equinox.launcher_*.jar >/dev/null 2>&1; then
+  echo "jdtls: already installed at ${CURRENT_LINK}, skipping."
+  exit 0
+fi
+
+echo "jdtls: downloading ${ASSET} (${OWNER_REPO}@${JDTLS_TAG}) ..."
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+curl -fSL -o "$TMP/jdtls.tar.gz" \
+  "https://github.com/${OWNER_REPO}/releases/download/${JDTLS_TAG}/${ASSET}"
+
+mkdir -p "$VERSION_DIR"
+tar -xzf "$TMP/jdtls.tar.gz" -C "$VERSION_DIR"
+
+ln -sfn "$VERSION_DIR" "$CURRENT_LINK"
+echo "jdtls: installed to ${CURRENT_LINK}"
+{{- end }}

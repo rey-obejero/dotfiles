@@ -4,6 +4,8 @@
 # It stores machine-specific answers. Edit it later with `chezmoi edit-config`
 # or `nvim ~/.config/chezmoi/chezmoi.toml`.
 
+{{ writeToStdout "\033[1;36m==>\033[0m \033[1mConfigure your setup\033[0m\n" -}}
+
 [data]
 
 # Default OpenCode model for all agents.
@@ -16,10 +18,17 @@ opencode_model_general = "{{ promptStringOnce . "opencode_model_general" "Model 
 opencode_model_explore = "{{ promptStringOnce . "opencode_model_explore" "Model for the explore agent? (empty = default)" "" }}"
 opencode_model_scout = "{{ promptStringOnce . "opencode_model_scout" "Model for the scout agent? (empty = default)" "" }}"
 
-# Absolute path to your eclipse.jdtls clone. Required — empty input aborts init.
-{{ $jdtls_path := promptStringOnce . "jdtls_path" "Absolute path to eclipse.jdt.ls clone?" -}}
-{{- if eq $jdtls_path "" }}{{ warnf "jdtls_path cannot be empty - run chezmoi init again and provide your eclipse.jdt.ls clone path" }}{{ exit 1 }}{{ end }}
+# --- Eclipse JDT Language Server ---
+{{ $jdtls_auto := promptBoolOnce . "jdtls_auto" "Install `jdtls` automatically to ~/.local/share/jdtls/current? [Y/n] " true -}}
+{{- if $jdtls_auto }}
+jdtls_mode = "auto"
+jdtls_path = "~/.local/share/jdtls/current"
+{{- else }}
+jdtls_mode = "manual"
+{{ $jdtls_path := promptStringOnce . "jdtls_path" "Absolute path to your jdtls instance?" -}}
+{{- if eq $jdtls_path "" }}{{ warnf "jdtls_path cannot be empty - run chezmoi init again and provide your jdtls instance path" }}{{ exit 1 }}{{ end }}
 jdtls_path = "{{ $jdtls_path }}"
+{{- end }}
 
 # Make `chezmoi edit <file>` auto-apply on every save (no need for --apply/--watch).
 [edit]
