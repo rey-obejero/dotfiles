@@ -158,7 +158,8 @@ hash changed — for new plugins use `prefix + I`).
 | `prefix + b`                          | Jump to the **last** (previously active) window (`last-window`)         | custom         |
 | `prefix + <` / `prefix + >`           | Move current window left / right, **keeping focus** on it               | custom         |
 | `prefix + &`                          | Kill the current window (with confirmation)                             | custom         |
-| `prefix + K`                          | Kill the entire tmux server (with confirmation)                         | custom         |
+| `prefix + K`                          | Kill the entire tmux server (with confirmation)                             | custom         |
+| `prefix + X`                          | Kill the current session (with confirmation)                                | custom         |
 | `prefix + R`                          | Reload the tmux config                                                  | tmux-sensible  |
 | `prefix + C-p` / `prefix + C-n`       | Previous / next window                                                  | tmux-sensible  |
 | `prefix + Ctrl-s` / `prefix + Ctrl-r` | Save / restore the session                                              | tmux-resurrect |
