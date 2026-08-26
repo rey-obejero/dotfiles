@@ -1,2 +1,4 @@
 dot_tmux/plugins/**
+documentation/
 AGENTS.md
+README.md
