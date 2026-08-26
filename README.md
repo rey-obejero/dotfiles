@@ -9,6 +9,8 @@ Machine-agnostic, transferrable dotfiles managed with [chezmoi](https://www.chez
 - [Specifications](#specifications)
 - [Configuration](#configuration)
   - [Resetting Your Configuration](#resetting-your-configuration)
+- [OpenCode](#opencode)
+  - [Custom Providers](#custom-providers)
 - [Getting Started](#getting-started)
 - [Daily Editing](#daily-editing)
 - [Reverting an Applied Modification](#reverting-an-applied-modification)
@@ -52,6 +54,15 @@ single agent, add its key in `~/.config/chezmoi/chezmoi.toml` and re-run
 
 The Java LSP intentionally does **not** use Mason — the [eclipse.jdt.ls](https://projects.eclipse.org/projects/eclipse.jdt.ls/) host is
 slow, so we rely on a local clone you point `jdtls_path` at.
+
+## OpenCode
+
+### Custom Providers
+
+OpenCode is configured with a custom **Command Code** (`commandcode`) provider
+that aggregates the GOAT model catalog. The full setup — provider block,
+model catalog, reasoning-effort variants, and how to edit it — is documented in
+[`documentation/opencode/commandcode.md`](./documentation/opencode/commandcode.md).
 
 ## Getting Started
 
