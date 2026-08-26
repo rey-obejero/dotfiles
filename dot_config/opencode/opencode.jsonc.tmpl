@@ -167,7 +167,15 @@
           "x-cmd-zdr": "1",
         },
       },
-      {{ template "opencode/models.jsonc" }}
+      {{ template "opencode/commandcode-models.jsonc" }}
+    },
+    "commandcode-free": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Command Code Free",
+      "options": {
+        "baseURL": "https://api.commandcode.ai/provider/v1",
+      },
+      {{ template "opencode/commandcode-free-models.jsonc" }}
     }
   }
 }

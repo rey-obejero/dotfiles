@@ -271,22 +271,8 @@
         "high": { "disabled": true }
       }
     },
-    "minimax/minimax-m2.7-free": {
-      "name": "MiniMax M2.7 Free",
-      "reasoning": true,
-      "variants": {
-        "low": { "disabled": true },
-        "medium": { "disabled": true },
-        "high": { "disabled": true }
-      }
-    },
     "MiniMaxAI/MiniMax-M3": {
       "name": "MiniMax M3",
-      "reasoning": true,
-      "attachment": true
-    },
-    "minimax/minimax-m3-free": {
-      "name": "MiniMax M3 Free",
       "reasoning": true,
       "attachment": true
     },
