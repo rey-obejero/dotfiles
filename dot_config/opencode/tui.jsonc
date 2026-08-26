@@ -5,5 +5,15 @@
   "plugin": [
     "@tarquinen/opencode-dcp@latest",     // Direct Context Protocol integration
     "@slkiser/opencode-quota",            // Quota/token usage — sidebar + compact status (Node >= 22)
+    // Vim controls for the OpenCode prompt. Install once with:
+    //   opencode plugin @leohenon/opencode-vim-plugin --global   (requires OpenCode >= 1.17.10)
+    [
+      "@leohenon/opencode-vim-plugin",
+      {
+        "enabled": true,
+        "vim_initial_mode": "normal",
+        "vim_system_clipboard_register": true
+      }
+    ],
   ],
 }
