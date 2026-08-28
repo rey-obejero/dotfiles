@@ -151,6 +151,15 @@
     "opencode-handoff",                        // Handoff prompt generator — `/handoff <goal>` (OpenCode >= v1.2.15)
   ],
 
+  // MCP servers
+  "mcp": {
+    "super-productivity": {
+      "type": "local",
+      "command": ["npx", "-y", "super-productivity-mcp"],
+      "enabled": true
+    }
+  },
+
   // OpenCode Quota: auto-detected provider declarations (added by init).
   "provider": {
     // Detected openrouter authentication; opencode-quota added this global provider declaration.
