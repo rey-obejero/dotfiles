@@ -5,8 +5,8 @@
 This document describes the custom **Command Code** (`commandcode`) provider
 used by [OpenCode](https://opencode.ai/). It covers the provider block in
 `dot_config/opencode/opencode.jsonc.tmpl`, the full model catalog that lives in
-`.chezmoitemplates/opencode/models.jsonc`, and how reasoning-effort variants are
-derived and trimmed.
+`.chezmoitemplates/opencode/commandcode-models.jsonc`, and how reasoning-effort
+variants are derived and trimmed.
 
 > **ZDR (Zerodebug/Routing)**: the provider sends the `x-cmd-zdr: 1` header on
 > every request. See the header section below.
@@ -49,7 +49,7 @@ In `dot_config/opencode/opencode.jsonc.tmpl` (inside `"provider"`):
       "x-cmd-zdr": "1"
     }
   },
-  "models": {{- template "opencode/models.jsonc" }}
+  "models": {{- template "opencode/commandcode-models.jsonc" }}
 }
 ```
 
@@ -60,7 +60,7 @@ In `dot_config/opencode/opencode.jsonc.tmpl` (inside `"provider"`):
 | `baseURL` | `https://api.commandcode.ai/provider/v1` (OpenAI-style endpoint)    |
 | `headers` | `x-cmd-zdr: 1` (enables Zero-Delay Routing / ZDR)                   |
 | `apiKey`  | **absent** — use `/connect` once instead                            |
-| `models`  | injected from `.chezmoitemplates/opencode/models.jsonc` (see below) |
+| `models`  | injected from `.chezmoitemplates/opencode/commandcode-models.jsonc` (see below) |
 
 ### ZDR header
 
@@ -77,13 +77,14 @@ The provider's `models` object is **not** written inline in
 render time:
 
 ```jsonc
-"models": {{- template "opencode/models.jsonc" }}
+"models": {{- template "opencode/commandcode-models.jsonc" }}
 ```
 
-- **Source of truth:** `.chezmoitemplates/opencode/models.jsonc`
+- **Source of truth:** `.chezmoitemplates/opencode/commandcode-models.jsonc`
 - **Rendered into:** `~/.config/opencode/opencode.jsonc` (via `chezmoi apply`)
-- **Size:** 60 models, including **all 42 GOAT-plan models** and all **4 free**
-  models (Ox Alpha, Laguna S 2.1 Free, MiniMax M2.7 Free, MiniMax M3 Free).
+- **Size:** 62 models across the two partials, including **all 42 GOAT-plan
+  models** and all **3 free** models (Laguna S 2.1 Free, MiniMax M2.7 Free,
+  MiniMax M3 Free).
 - **Default model:** `commandcode/deepseek/deepseek-v4-flash`, set through the
   `opencode_model` chezmoi data variable (see the main `README.md` →
   _Configuration_ table).
@@ -111,6 +112,55 @@ For clarity, this repo sources each model's _true_ supported effort levels from
 the models.dev entries OpenCode ships for the **`opencode-go`** and
 **`opencode`** (OpenCode Zen) harness providers, which expose the same models
 with their real `reasoning_options`.
+
+### How to look up a model's reasoning options
+
+When adding or updating a model, **never conclude the reasoning levels "can't be
+verified" before running the lookup below.** Every model listed on
+[models.dev](https://models.dev) carries its real `reasoning_options` in the
+public combined catalog, so the data is almost always available.
+
+1. **Fetch the catalog.** Pull the public combined API snapshot and keep it
+   locally:
+
+   ```sh
+   curl https://models.dev/api.json > /tmp/models.json
+   ```
+
+   (Or open the same URL with a web fetch and save the response.)
+
+2. **Find the model's `reasoning_options`.** The JSON is one giant line, so a
+   line-based search tool (`rg` / the ripgrep-based search) fails with
+   `Ripgrep JSON record exceeded 65536 bytes`. Use **GNU grep** with a bounded
+   window instead:
+
+   ```sh
+   grep -oE '"<model-id>":\{.{0,500}' /tmp/models.json
+   ```
+
+   Example that works:
+
+   ```sh
+   grep -oE '"qwen3.8-flash":\{.{0,500}' /tmp/models.json
+   ```
+
+   (Note the window `.{0,500}` — ripgrep will not do this; GNU grep will.)
+
+3. **Read the `reasoning_options` array:**
+   - An `effort` entry lists the model's real effort levels in its `values`
+     array, e.g. `"values":["low","medium","xhigh"]` → variants
+     `low`/`medium`/`xhigh`. Translate each into a flat
+     `"<name>": { "reasoningEffort": "<name>" }` variant and add
+     `"disabled": true` for every auto-generated level **outside** that set.
+   - A bare `toggle` entry (no `effort` values) means there is **no**
+     low/medium/high picker → set all of `low`/`medium`/`high` to
+     `"disabled": true` (the "no effort toggles" case below).
+   - Values like `"none"` are not real effort toggles — only the meaningful
+     levels (e.g. `low`, `high`, `max`) become variants.
+
+4. **Confirm attachment/multimodality** from the same entry (`attachment: true`)
+   and mirror the closest sibling's structure in the catalog when the exact
+   config shape is ambiguous.
 
 ### How OpenCode merges variants
 
@@ -146,14 +196,16 @@ Active reasoning-effort toggles (after `disabled` trimming) by model:
 | `zai-org/GLM-5.2`                                                                      | `high`, `max`                                             |
 | `zai-org/GLM-5.2-Fast`                                                                 | _(current, deferred)_                                     |
 | `zai-org/GLM-5.3`                                                                      | `low`, `high`, `max`                                      |
+| `zai-org/GLM-5.3-Flash`                                                               | `low`, `high`, `max`                                      |
 | `nvidia/nemotron-3-ultra-550b-a55b`                                                    | `medium`, `high`                                          |
 | `sakana/fugu-ultra`                                                                    | `high`, `xhigh`                                           |
-| `stealth/ox-alpha`                                                                     | `low`, `high`, `max`                                      |
 | `stepfun/Step-3.5-Flash`                                                               | `low`, `high`                                             |
 | `stepfun/Step-3.7-Flash`                                                               | `low`, `medium`, `high`                                   |
 | `tencent/hy3-paid`                                                                     | `low`, `high`                                             |
+| `tencent/hy4-preview`                                                                  | `high`                                                    |
 | `Qwen/Qwen3.7-Flash`                                                                   | `high`                                                    |
 | `Qwen/Qwen3.8-27B`                                                                     | _(current, deferred)_                                     |
+| `Qwen/Qwen3.8-Flash`                                                                   | `low`, `medium`, `xhigh`                                  |
 | `Qwen/Qwen3.7-Max`, `3.7-Plus`, `3.6-Plus`, `3.8-Max`                                  | _(no effort toggles)_                                     |
 | `xiaomi/mimo-v2.5`, `v2.5-pro`                                                         | _(no effort toggles)_                                     |
 | `MiniMaxAI/MiniMax-M2.5`, `M2.7`, `minimax-m2.7-free`                                  | _(no effort toggles)_                                     |
@@ -172,7 +224,7 @@ Per `AGENTS.md` — **never edit the deployed file**
 overwritten on the next `chezmoi apply`.
 
 - Provider block: edit `dot_config/opencode/opencode.jsonc.tmpl`.
-- Model catalog / variants: edit `.chezmoitemplates/opencode/models.jsonc`.
+- Model catalog / variants: edit `.chezmoitemplates/opencode/commandcode-models.jsonc`.
 - Render preview: `chezmoi cat ~/.config/opencode/opencode.jsonc`.
 - Apply: `chezmoi apply`.
 - Inspect: `chezmoi diff` / `chezmoi status`.

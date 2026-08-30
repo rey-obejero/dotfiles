@@ -75,6 +75,17 @@
         "max": { "reasoningEffort": "max" }
       }
     },
+    "zai-org/GLM-5.3-Flash": {
+      "name": "GLM-5.3 Flash",
+      "reasoning": true,
+      "attachment": true,
+      "variants": {
+        "medium": { "disabled": true },
+        "low": { "reasoningEffort": "low" },
+        "high": { "reasoningEffort": "high" },
+        "max": { "reasoningEffort": "max" }
+      }
+    },
 
     // ---- OpenAI ----
     "gpt-5.3-codex": {
@@ -440,19 +451,6 @@
       }
     },
 
-    // ---- Stealth ----
-    "stealth/ox-alpha": {
-      "name": "Ox Alpha",
-      "reasoning": true,
-      "attachment": true,
-      "variants": {
-        "medium": { "disabled": true },
-        "low": { "reasoningEffort": "low" },
-        "high": { "reasoningEffort": "high" },
-        "max": { "reasoningEffort": "max" }
-      }
-    },
-
     // ---- StepFun ----
     "stepfun/Step-3.5-Flash": {
       "name": "Step 3.5 Flash",
@@ -481,6 +479,15 @@
       "variants": {
         "medium": { "disabled": true },
         "low": { "reasoningEffort": "low" },
+        "high": { "reasoningEffort": "high" }
+      }
+    },
+    "tencent/hy4-preview": {
+      "name": "Tencent Hy4 Preview",
+      "reasoning": true,
+      "variants": {
+        "low": { "disabled": true },
+        "medium": { "disabled": true },
         "high": { "reasoningEffort": "high" }
       }
     },
@@ -602,6 +609,17 @@
       "reasoning": true,
       "attachment": true,
       "variants": {
+        "low": { "reasoningEffort": "low" },
+        "medium": { "reasoningEffort": "medium" },
+        "xhigh": { "reasoningEffort": "xhigh" }
+      }
+    },
+    "Qwen/Qwen3.8-Flash": {
+      "name": "Qwen 3.8 Flash",
+      "reasoning": true,
+      "attachment": true,
+      "variants": {
+        "high": { "disabled": true },
         "low": { "reasoningEffort": "low" },
         "medium": { "reasoningEffort": "medium" },
         "xhigh": { "reasoningEffort": "xhigh" }
