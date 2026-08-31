@@ -175,6 +175,14 @@
       "name": "Command Code",
       "options": {
         "baseURL": "https://api.commandcode.ai/provider/v1",
+      },
+      {{ template "opencode/commandcode-models.jsonc" }}
+    },
+    "commandcode-zdr": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Command Code ZDR",
+      "options": {
+        "baseURL": "https://api.commandcode.ai/provider/v1",
         "headers": {
           "x-cmd-zdr": "1",
         },

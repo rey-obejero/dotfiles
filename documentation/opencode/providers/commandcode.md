@@ -1,6 +1,15 @@
 # Command Code Provider (OpenCode)
 
-**To Document Later:** Some models are available for free but without ZDR support. These models are defined in `.chezmoitemplates/opencode/commandcode-free-models.jsonc`.
+**TODO: Document the different provider and model types.**
+
+- Some models are available for free but without ZDR support. These
+  models are defined in `.chezmoitemplates/opencode/commandcode-free-models.jsonc`.
+- Since enforcing ZDR for all models [may result in higher costs](https://commandcode.ai/docs/resources/zdr#why-zdr-costs-more),
+  separate providers are defined for ZDR and non-ZDR requests.
+  Both provider types pull from the same `commandcode-models.jsonc`, but the default
+  `commandcode` provider does not request for ZDR via the headers.
+- Although the default provider may not explicitly request for ZDR, Command Code
+  does guarantee that most models have [ZDR enabled by default](https://commandcode.ai/docs/resources/zdr#zdr-on-goat-and-pro/).
 
 This document describes the custom **Command Code** (`commandcode`) provider
 used by [OpenCode](https://opencode.ai/). It covers the provider block in
@@ -53,13 +62,13 @@ In `dot_config/opencode/opencode.jsonc.tmpl` (inside `"provider"`):
 }
 ```
 
-| Key       | Value                                                               |
-| --------- | ------------------------------------------------------------------- |
-| `npm`     | `@ai-sdk/openai-compatible` — OpenAI-compatible integration         |
-| `name`    | `Command Code` (display name)                                       |
-| `baseURL` | `https://api.commandcode.ai/provider/v1` (OpenAI-style endpoint)    |
-| `headers` | `x-cmd-zdr: 1` (enables Zero-Delay Routing / ZDR)                   |
-| `apiKey`  | **absent** — use `/connect` once instead                            |
+| Key       | Value                                                                           |
+| --------- | ------------------------------------------------------------------------------- |
+| `npm`     | `@ai-sdk/openai-compatible` — OpenAI-compatible integration                     |
+| `name`    | `Command Code` (display name)                                                   |
+| `baseURL` | `https://api.commandcode.ai/provider/v1` (OpenAI-style endpoint)                |
+| `headers` | `x-cmd-zdr: 1` (enables Zero-Delay Routing / ZDR)                               |
+| `apiKey`  | **absent** — use `/connect` once instead                                        |
 | `models`  | injected from `.chezmoitemplates/opencode/commandcode-models.jsonc` (see below) |
 
 ### ZDR header
@@ -196,7 +205,7 @@ Active reasoning-effort toggles (after `disabled` trimming) by model:
 | `zai-org/GLM-5.2`                                                                      | `high`, `max`                                             |
 | `zai-org/GLM-5.2-Fast`                                                                 | _(current, deferred)_                                     |
 | `zai-org/GLM-5.3`                                                                      | `low`, `high`, `max`                                      |
-| `zai-org/GLM-5.3-Flash`                                                               | `low`, `high`, `max`                                      |
+| `zai-org/GLM-5.3-Flash`                                                                | `low`, `high`, `max`                                      |
 | `nvidia/nemotron-3-ultra-550b-a55b`                                                    | `medium`, `high`                                          |
 | `sakana/fugu-ultra`                                                                    | `high`, `xhigh`                                           |
 | `stepfun/Step-3.5-Flash`                                                               | `low`, `high`                                             |
