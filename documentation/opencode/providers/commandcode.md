@@ -91,9 +91,8 @@ render time:
 
 - **Source of truth:** `.chezmoitemplates/opencode/commandcode-models.jsonc`
 - **Rendered into:** `~/.config/opencode/opencode.jsonc` (via `chezmoi apply`)
-- **Size:** 62 models across the two partials, including **all 42 GOAT-plan
-  models** and all **3 free** models (Laguna S 2.1 Free, MiniMax M2.7 Free,
-  MiniMax M3 Free).
+- **Size:** 68 models across the two partials, including **all 42 GOAT-plan
+  models** and the **free** models (Laguna S 2.1 Free, LongCat 2.0 Free).
 - **Default model:** `commandcode/deepseek/deepseek-v4-flash`, set through the
   `opencode_model` chezmoi data variable (see the main `README.md` →
   _Configuration_ table).
@@ -200,6 +199,7 @@ Active reasoning-effort toggles (after `disabled` trimming) by model:
 | -------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | `deepseek/deepseek-v4-flash`                                                           | `low`, `high`, `max`                                      |
 | `deepseek/deepseek-v4-flash-vision-exp`                                                | `low`, `high`, `max`                                      |
+| `deepseek/deepseek-v4-flash-fast`                                                      | `low`, `high`, `max`                                      |
 | `deepseek/deepseek-v4-pro`                                                             | `high`, `max`                                             |
 | `zai-org/GLM-5`, `GLM-5.1`                                                             | _(no effort toggles)_                                     |
 | `zai-org/GLM-5.2`                                                                      | `high`, `max`                                             |
@@ -212,14 +212,17 @@ Active reasoning-effort toggles (after `disabled` trimming) by model:
 | `stepfun/Step-3.7-Flash`                                                               | `low`, `medium`, `high`                                   |
 | `tencent/hy3-paid`                                                                     | `low`, `high`                                             |
 | `tencent/hy4-preview`                                                                  | `high`                                                    |
+| `google/gemini-3.8-flash`                                                              | _(no effort toggles)_                                     |
 | `Qwen/Qwen3.7-Flash`                                                                   | `high`                                                    |
 | `Qwen/Qwen3.8-27B`                                                                     | _(current, deferred)_                                     |
 | `Qwen/Qwen3.8-Flash`                                                                   | `low`, `medium`, `xhigh`                                  |
 | `Qwen/Qwen3.7-Max`, `3.7-Plus`, `3.6-Plus`, `3.8-Max`                                  | _(no effort toggles)_                                     |
+| `Qwen/Qwen3.8-Max-0902`                                                                | `low`, `medium`, `high`, `max`                            |
 | `xiaomi/mimo-v2.5`, `v2.5-pro`                                                         | _(no effort toggles)_                                     |
-| `MiniMaxAI/MiniMax-M2.5`, `M2.7`, `minimax-m2.7-free`                                  | _(no effort toggles)_                                     |
+| `MiniMaxAI/MiniMax-M2.5`, `M2.7`                                                       | _(no effort toggles)_                                     |
 | `moonshotai/Kimi-K2.5`, `K2.6`, `K2.7-Code`, `K2.7-Code-Highspeed`                     | _(no effort toggles)_                                     |
-| all other models (`gpt-5.6-*`, `gemini-*`, `claude-*`, `grok-*`, `muse-spark-*`, etc.) | full set as configured (auto subset is already supported) |
+| `meituan/longcat-2.0:free`                                                             | _(no effort toggles)_                                     |
+| all other models (`gpt-5.6-*`, `gpt-6-astra`, `gemini-*`, `claude-*`, `grok-*`, `muse-spark-*`, etc.) | full set as configured (auto subset is already supported) |
 
 _(No effort toggles)_ means reasoning is enabled but the TUI shows no
 low/medium/high/max picker — matching the model's real capabilities.

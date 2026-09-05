@@ -31,6 +31,16 @@
         "max": { "reasoningEffort": "max" }
       }
     },
+    "deepseek/deepseek-v4-flash-fast": {
+      "name": "DeepSeek V4 Flash Fast",
+      "reasoning": true,
+      "variants": {
+        "medium": { "disabled": true },
+        "low": { "reasoningEffort": "low" },
+        "high": { "reasoningEffort": "high" },
+        "max": { "reasoningEffort": "max" }
+      }
+    },
 
     // ---- Z-AI / GLM ----
     "zai-org/GLM-5": {
@@ -168,6 +178,18 @@
         "max": { "reasoningEffort": "max" }
       }
     },
+    "gpt-6-astra": {
+      "name": "GPT-6 Astra",
+      "reasoning": true,
+      "attachment": true,
+      "variants": {
+        "low": { "reasoningEffort": "low" },
+        "medium": { "reasoningEffort": "medium" },
+        "high": { "reasoningEffort": "high" },
+        "xhigh": { "reasoningEffort": "xhigh" },
+        "max": { "reasoningEffort": "max" }
+      }
+    },
 
     // ---- Google Gemini ----
     "google/gemini-3.1-flash-lite": {
@@ -224,6 +246,16 @@
         "high": { "reasoningEffort": "high" }
       }
     },
+    "google/gemini-3.8-flash": {
+      "name": "Gemini 3.8 Flash",
+      "reasoning": true,
+      "attachment": true,
+      "variants": {
+        "low": { "disabled": true },
+        "medium": { "disabled": true },
+        "high": { "disabled": true }
+      }
+    },
 
     // ---- Meta / Muse Spark ----
     "meta/muse-spark-1.1": {
@@ -252,6 +284,30 @@
     },
     "meta/muse-spark-1.2-contributor": {
       "name": "Muse Spark 1.2 Contributor",
+      "reasoning": true,
+      "attachment": true,
+      "variants": {
+        "minimal": { "reasoningEffort": "minimal" },
+        "low": { "reasoningEffort": "low" },
+        "medium": { "reasoningEffort": "medium" },
+        "high": { "reasoningEffort": "high" },
+        "xhigh": { "reasoningEffort": "xhigh" }
+      }
+    },
+    "meta/muse-spark-1.3": {
+      "name": "Muse Spark 1.3",
+      "reasoning": true,
+      "attachment": true,
+      "variants": {
+        "minimal": { "reasoningEffort": "minimal" },
+        "low": { "reasoningEffort": "low" },
+        "medium": { "reasoningEffort": "medium" },
+        "high": { "reasoningEffort": "high" },
+        "xhigh": { "reasoningEffort": "xhigh" }
+      }
+    },
+    "meta/muse-spark-1.3-contributor": {
+      "name": "Muse Spark 1.3 Contributor",
       "reasoning": true,
       "attachment": true,
       "variants": {
@@ -352,6 +408,18 @@
     // ---- Anthropic ----
     "claude-fable-5": {
       "name": "Claude Fable 5",
+      "reasoning": true,
+      "attachment": true,
+      "variants": {
+        "low": { "reasoningEffort": "low" },
+        "medium": { "reasoningEffort": "medium" },
+        "high": { "reasoningEffort": "high" },
+        "xhigh": { "reasoningEffort": "xhigh" },
+        "max": { "reasoningEffort": "max" }
+      }
+    },
+    "claude-fable-5-1": {
+      "name": "Claude Fable 5.1",
       "reasoning": true,
       "attachment": true,
       "variants": {
@@ -633,6 +701,17 @@
         "low": { "disabled": true },
         "medium": { "disabled": true },
         "high": { "disabled": true }
+      }
+    },
+    "Qwen/Qwen3.8-Max-0902": {
+      "name": "Qwen 3.8 Max 0902",
+      "reasoning": true,
+      "attachment": true,
+      "variants": {
+        "low": { "reasoningEffort": "low" },
+        "medium": { "reasoningEffort": "medium" },
+        "high": { "reasoningEffort": "high" },
+        "max": { "reasoningEffort": "max" }
       }
     }
   }
