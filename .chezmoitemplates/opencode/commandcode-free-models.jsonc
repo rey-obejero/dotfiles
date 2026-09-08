@@ -2,6 +2,10 @@
     // ---- Meituan ----
     "meituan/longcat-2.0:free": {
       "name": "LongCat 2.0 Free",
+      "cost": { "input": 0, "output": 0, "cache_read": 0 },
+      "limit": { "context": 1048576, "output": 131072 },
+      "tool_call": true,
+      "modalities": { "input": ["text", "image"], "output": ["text"] },
       "reasoning": true,
       "attachment": true
     }

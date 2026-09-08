@@ -73,9 +73,10 @@ In `dot_config/opencode/opencode.jsonc.tmpl` (inside `"provider"`):
 
 ### ZDR header
 
-`x-cmd-zdr: 1` opts in to Command Code's routing behavior for this provider.
-Keep it present on the provider's `options.headers`; it applies to every request
-made through this provider.
+`x-cmd-zdr: 1` opts in to Command Code's routing behavior. It is present on
+the `command-code` provider's `options.headers` (and applies to every request
+made through that provider), and **absent** on `command-code-non-zdr` and
+`command-code-free`.
 
 ---
 
@@ -91,8 +92,9 @@ render time:
 
 - **Source of truth:** `.chezmoitemplates/opencode/commandcode-models.jsonc`
 - **Rendered into:** `~/.config/opencode/opencode.jsonc` (via `chezmoi apply`)
-- **Size:** 68 models across the two partials, including **all 42 GOAT-plan
-  models** and the **free** models (Laguna S 2.1 Free, LongCat 2.0 Free).
+- **Size:** 67 models plus 1 in the free partial (`longcat-2.0:free`), including
+  **all 42 GOAT-plan models** and the **free** models (Laguna S 2.1 Free,
+  LongCat 2.0 Free).
 - **Default model:** `commandcode/deepseek/deepseek-v4-flash`, set through the
   `opencode_model` chezmoi data variable (see the main `README.md` →
   _Configuration_ table).
@@ -100,6 +102,57 @@ render time:
 > The partial contains extra models beyond the GOAT plan (e.g. the `gpt-5.6-*`
 > family, `gemini-*`, `claude-*`, `muse-spark-1.1`). These are kept deliberately
 > so the provider is a general catalog, not a GOAT-exclusive one.
+
+---
+
+## Model costs and limits
+
+Each model entry carries `cost` (per-1M-token USD), `limit.context`,
+`limit.output` (where defensible), `tool_call: true`, and `modalities`
+(where `attachment: true`):
+
+```jsonc
+"deepseek/deepseek-v4-flash": {
+  "name": "DeepSeek V4 Flash",
+  "cost": { "input": 0.22, "output": 0.66, "cache_read": 0.007 },
+  "limit": { "context": 1000000, "output": 384000 },
+  "tool_call": true,
+  "reasoning": true,
+  "variants": { "...": "..." }
+}
+```
+
+### Field sources (mixed, by capability)
+
+| Field | Source | Notes |
+| ----- | ------ | ----- |
+| `cost.*` | [Command Code pricing & limits](https://commandcode.ai/docs/resources/pricing-limits), **Now/effective column** | Bakes in deal rates (MiMo V2.5/Pro, MiniMax M3) and DeepSeek **off-peak** rates. `cache_write` only where the docs table lists one. |
+| `limit.context` | `GET https://api.commandcode.ai/provider/v1/models` (`context_length`), cross-checked against the pricing table | Falls back to the pricing table's Context column (e.g. GLM-5.1 `—` → API `200000`). |
+| `limit.output` | [models.dev](https://models.dev) nearest capability-equivalent upstream entry | Resolved for all 5 initially-omitted models via exact/case-insensitive ID matches: `nemotron-3-ultra` → `65536` (unanimous across 6 providers); `Step-3.5-Flash` → `262114` (nearest same-model entry, case-insensitive); `inkling` / `inkling-small` → `262144` each; `Qwen3.7-Flash` → `65536` (majority). `Step-3.5-Flash` `limit.context` is live Command Code API (`1000000`), kept even though it differs from the 64k/262kctx variants some models.dev providers list — effective output tokens cannot exceed context. |
+| `tool_call` | models.dev nearest equivalent | All catalog models resolve to `true`. |
+| `modalities` | Derived from existing `attachment: true` | `{ input: ["text", "image"], output: ["text"] }`, text-only otherwise (field omitted). |
+
+### Known approximations (staleness guardrails)
+
+- **DeepSeek time variance.** The `cost` values are **off-peak** (17h/day + all
+  weekend). Peak hours (01–04 & 06–10 UTC, Mon–Fri) cost **2×** — OpenCode
+  cannot represent time-varying rates, so peak spend reads ~half of actual.
+- **ZDR uplift.** The ZDR provider (`x-cmd-zdr: 1`) may be served by a
+  pricier upstream than the table's mean rate; actual per-request cost is on
+  the [Usage](https://commandcode.ai/usage) page.
+- **Plan allowances are not encoded.** GOAT/Pro per-model allowances and
+  rolling windows live outside the model config.
+- **Snapshot date: 2026-09-08.** Pricing drifts (deals, upstream changes).
+  Refresh `cost` from the pricing table and `limit.context` from
+  `GET /provider/v1/models`; refresh `limit.output` from the combined
+  models.dev snapshot (`curl https://models.dev/api.json`, GNU-grep the
+  model id — ripgrep fails on the single-line JSON).
+
+### Free models
+
+`commandcode-free-models.jsonc` entries (`laguna-s-2.1-free`, `longcat-2.0:free`)
+use zero `cost` with real `limit.context`; `limit.output` comes from the
+models.dev equivalent as above.
 
 ---
 
