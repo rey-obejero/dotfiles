@@ -167,16 +167,7 @@
     "openrouter": {},
     // Detected opencode-go authentication; opencode-quota added this global provider declaration.
     "opencode-go": {},
-
-    "commandcode": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Command Code",
-      "options": {
-        "baseURL": "https://api.commandcode.ai/provider/v1",
-      },
-      {{ template "opencode/commandcode-models.jsonc" }}
-    },
-    "commandcode-zdr": {
+    "command-code": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Command Code ZDR",
       "options": {
@@ -187,7 +178,15 @@
       },
       {{ template "opencode/commandcode-models.jsonc" }}
     },
-    "commandcode-free": {
+    "command-code-non-zdr": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Command Code Non-ZDR",
+      "options": {
+        "baseURL": "https://api.commandcode.ai/provider/v1",
+      },
+      {{ template "opencode/commandcode-models.jsonc" }}
+    },
+    "command-code-free": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Command Code Free",
       "options": {
