@@ -7,22 +7,22 @@
   // Session token totals: "current" session only, or "tree" including descendants.
   "sessionTokenScope": "tree",
   // Provider selection: "auto" detects providers; an array tracks only listed providers.
-  "enabledProviders": "auto",
+  "enabledProviders": ["commandcode", "openrouter"],
   // Quota presentation and reset-period choices.
   "formatStyle": "allWindows",
   "percentDisplayMode": "used",
   // TUI-only surfaces.
   "tuiSidebarPanel": {
-    "enabled": true
+    "enabled": true,
   },
   "tuiCompactStatus": {
     "enabled": true,
     "homeBottom": true,
     "sessionPrompt": true,
-    "suppressWhenNativeProviderQuota": true
+    "suppressWhenNativeProviderQuota": true,
   },
   // Optional bundled maintainer Home announcements.
   "maintainerAnnouncements": {
-    "enabled": false
-  }
+    "enabled": false,
+  },
 }
