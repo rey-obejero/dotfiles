@@ -92,9 +92,10 @@ render time:
 
 - **Source of truth:** `.chezmoitemplates/opencode/commandcode-models.jsonc`
 - **Rendered into:** `~/.config/opencode/opencode.jsonc` (via `chezmoi apply`)
-- **Size:** 67 models plus 1 in the free partial (`longcat-2.0:free`), including
+- **Size:** 68 models plus 2 in the free partial (`longcat-2.0:free`,
+  `ling-3.0-flash-sante:free`), including
   **all 42 GOAT-plan models** and the **free** models (Laguna S 2.1 Free,
-  LongCat 2.0 Free).
+  LongCat 2.0 Free, Ling 3.0 Flash Sante Free).
 - **Default model:** `commandcode/deepseek/deepseek-v4-flash`, set through the
   `opencode_model` chezmoi data variable (see the main `README.md` →
   _Configuration_ table).
@@ -114,7 +115,7 @@ Each model entry carries `cost` (per-1M-token USD), `limit.context`,
 ```jsonc
 "deepseek/deepseek-v4-flash": {
   "name": "DeepSeek V4 Flash",
-  "cost": { "input": 0.22, "output": 0.66, "cache_read": 0.007 },
+  "cost": { "input": 0.15, "output": 0.60, "cache_read": 0.003 },
   "limit": { "context": 1000000, "output": 384000 },
   "tool_call": true,
   "reasoning": true,
@@ -142,7 +143,7 @@ Each model entry carries `cost` (per-1M-token USD), `limit.context`,
   the [Usage](https://commandcode.ai/usage) page.
 - **Plan allowances are not encoded.** GOAT/Pro per-model allowances and
   rolling windows live outside the model config.
-- **Snapshot date: 2026-09-08.** Pricing drifts (deals, upstream changes).
+- **Snapshot date: 2026-09-10.** Pricing drifts (deals, upstream changes).
   Refresh `cost` from the pricing table and `limit.context` from
   `GET /provider/v1/models`; refresh `limit.output` from the combined
   models.dev snapshot (`curl https://models.dev/api.json`, GNU-grep the
@@ -150,9 +151,9 @@ Each model entry carries `cost` (per-1M-token USD), `limit.context`,
 
 ### Free models
 
-`commandcode-free-models.jsonc` entries (`laguna-s-2.1-free`, `longcat-2.0:free`)
-use zero `cost` with real `limit.context`; `limit.output` comes from the
-models.dev equivalent as above.
+`commandcode-free-models.jsonc` entries (`laguna-s-2.1-free`, `longcat-2.0:free`,
+`ling-3.0-flash-sante:free`) use zero `cost` with real `limit.context`;
+`limit.output` comes from the models.dev equivalent as above.
 
 ---
 
@@ -253,6 +254,7 @@ Active reasoning-effort toggles (after `disabled` trimming) by model:
 | `deepseek/deepseek-v4-flash`                                                           | `low`, `high`, `max`                                      |
 | `deepseek/deepseek-v4-flash-vision-exp`                                                | `low`, `high`, `max`                                      |
 | `deepseek/deepseek-v4-flash-fast`                                                      | `low`, `high`, `max`                                      |
+| `deepseek/deepseek-v4.1-flash`                                                         | `low`, `high`, `max`                                      |
 | `deepseek/deepseek-v4-pro`                                                             | `high`, `max`                                             |
 | `zai-org/GLM-5`, `GLM-5.1`                                                             | _(no effort toggles)_                                     |
 | `zai-org/GLM-5.2`                                                                      | `high`, `max`                                             |
@@ -275,6 +277,7 @@ Active reasoning-effort toggles (after `disabled` trimming) by model:
 | `MiniMaxAI/MiniMax-M2.5`, `M2.7`                                                       | _(no effort toggles)_                                     |
 | `moonshotai/Kimi-K2.5`, `K2.6`, `K2.7-Code`, `K2.7-Code-Highspeed`                     | _(no effort toggles)_                                     |
 | `meituan/longcat-2.0:free`                                                             | _(no effort toggles)_                                     |
+| `inclusionai/ling-3.0-flash-sante:free`                                                | `high`                                                    |
 | all other models (`gpt-5.6-*`, `gpt-6-astra`, `gemini-*`, `claude-*`, `grok-*`, `muse-spark-*`, etc.) | full set as configured (auto subset is already supported) |
 
 _(No effort toggles)_ means reasoning is enabled but the TUI shows no

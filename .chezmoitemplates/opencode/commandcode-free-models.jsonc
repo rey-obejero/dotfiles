@@ -8,5 +8,19 @@
       "modalities": { "input": ["text", "image"], "output": ["text"] },
       "reasoning": true,
       "attachment": true
+    },
+
+    // ---- InclusionAI ----
+    "inclusionai/ling-3.0-flash-sante:free": {
+      "name": "Ling 3.0 Flash Sante",
+      "cost": { "input": 0, "output": 0, "cache_read": 0 },
+      "limit": { "context": 262144, "output": 32768 },
+      "tool_call": true,
+      "reasoning": true,
+      "variants": {
+        "low": { "disabled": true },
+        "medium": { "disabled": true },
+        "high": { "reasoningEffort": "high" }
+      }
     }
   }
