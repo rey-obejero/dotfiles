@@ -1,0 +1,33 @@
+{
+  "$schema": "https://opencode.ai/v2/cli.json",
+
+  // Terminal UI settings for OpenCode V2 (managed by chezmoi).
+  "theme": {
+    "mode": "light",                  // Pin light mode (override terminal auto-detect)
+    "name": "github",
+  },
+  "animations": true,
+  "session": {
+    "sidebar": "auto",
+    "image_preview": false,
+    "permissions": "prompt",
+  },
+  "diffs": {
+    "view": "auto",
+  },
+  "attention": {
+    "notifications": true,
+    "sound": true,
+  },
+  "terminal": {
+    "copy": "select",
+    "title": true,
+  },
+  "prompt": {
+    "image_preview": true,
+  },
+  "tabs": {
+    "layout": "horizontal",
+    "indicators": "status",
+  },
+}

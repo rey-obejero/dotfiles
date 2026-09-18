@@ -4,7 +4,7 @@
 
 # Zsh native path array injection
 typeset -U path
-path=("$HOME/.local/bin" "$HOME/bin" "$HOME/.opencode/bin" $path)
+path=("$HOME/.local/bin" "$HOME/bin" $path)
 export PATH
 
 export VISUAL=nvim

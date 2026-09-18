@@ -1,7 +1,7 @@
 {
   "$schema": "https://opencode.ai/config.json",
 
-  "snapshot": false,
+  "snapshots": false,
 
   "shell": "zsh",                              // Preferred terminal shell for command executions
 
@@ -9,69 +9,66 @@
   "model": "{{ $global }}",                    // Global default model fallback
 
   // Agent roles setup
-  "agent": {
+  "agents": {
     "plan": {                                  // Read-only agent
       "mode": "primary",
       "model": "{{ .opencode_model_plan | default $global }}",
-      "permission": {
-        "edit": "deny",                        // Prevents modifying code files during design
-        "skill": "deny",                       // Restricts dynamic skill execution
-        "todowrite": "deny",                   // Prevents writing tracking checklists
-        "task": "deny",                        // Blocks sub-task management creation
-        "bash": {                              // Enforces completely non-destructive planning
-          "*": "deny",
-          "git status*": "allow",
-          "git diff*": "allow",
-          "git log*": "allow",
-          "grep *": "allow",
-          "head *": "allow",
-          "tail *": "allow",
-          "cat *": "allow",
-          "ls *": "allow",
-          "ps *": "allow",
-          "bash -n*": "allow",
-          "caddy validate*": "allow",
-        },
-      },
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },       // Prevents modifying code files during design
+        { "action": "skill", "resource": "*", "effect": "deny" },      // Restricts dynamic skill execution
+        { "action": "subagent", "resource": "*", "effect": "deny" },   // Blocks sub-agent creation
+        { "action": "shell", "resource": "*", "effect": "deny" },      // Non-destructive planning by default
+        { "action": "shell", "resource": "git status *", "effect": "allow" },
+        { "action": "shell", "resource": "git diff *", "effect": "allow" },
+        { "action": "shell", "resource": "git log *", "effect": "allow" },
+        { "action": "shell", "resource": "grep *", "effect": "allow" },
+        { "action": "shell", "resource": "head *", "effect": "allow" },
+        { "action": "shell", "resource": "tail *", "effect": "allow" },
+        { "action": "shell", "resource": "cat *", "effect": "allow" },
+        { "action": "shell", "resource": "ls *", "effect": "allow" },
+        { "action": "shell", "resource": "ps *", "effect": "allow" },
+        { "action": "shell", "resource": "bash -n*", "effect": "allow" },
+        { "action": "shell", "resource": "caddy validate *", "effect": "allow" }
+      ],
     },
 
     "build": {                                 // High-throughput workhorse agent
       "mode": "primary",
       "model": "{{ .opencode_model_build | default $global }}",
-      "permission": {
-        "npm run build*": "allow",
-        "npm run lint*": "allow",
-        "npm run test*": "allow",
-        "npm run typecheck*": "allow",
-        "npm run format*": "allow",
-        "npm run dev*": "allow",
-        "npm test*": "allow",
-        "pnpm build*": "allow",
-        "pnpm lint*": "allow",
-        "pnpm test*": "allow",
-        "pnpm dev*": "allow",
-        "pnpm typecheck*": "allow",
-        "pnpm format*": "allow",
-        "pnpm check*": "allow",
-        "pnpm install*": "ask",
-        "dotnet build*": "allow",
-        "dotnet test*": "allow",
-        "dotnet run*": "allow",
-        "dotnet restore*": "allow",
-        "dotnet format*": "allow",
-        "dotnet watch*": "allow",
-        "dotnet ef*": "allow",
-        "mvn test*": "allow",
-        "mvn compile*": "allow",
-        "mvn clean*": "allow",
-        "mvn package*": "allow",
-        "npx tsc*": "allow",
-        "npx vitest*": "allow",
-        "npx playwright*": "allow",
-        "npx eslint*": "allow",
-        "npx prettier*": "allow",
-        "pnpm exec *": "allow"
-      },
+      "permissions": [
+        { "action": "shell", "resource": "npm run build *", "effect": "allow" },
+        { "action": "shell", "resource": "npm run lint *", "effect": "allow" },
+        { "action": "shell", "resource": "npm run test *", "effect": "allow" },
+        { "action": "shell", "resource": "npm run typecheck *", "effect": "allow" },
+        { "action": "shell", "resource": "npm run format *", "effect": "allow" },
+        { "action": "shell", "resource": "npm run dev *", "effect": "allow" },
+        { "action": "shell", "resource": "npm test *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm build *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm lint *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm test *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm dev *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm typecheck *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm format *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm check *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm install *", "effect": "ask" },
+        { "action": "shell", "resource": "dotnet build *", "effect": "allow" },
+        { "action": "shell", "resource": "dotnet test *", "effect": "allow" },
+        { "action": "shell", "resource": "dotnet run *", "effect": "allow" },
+        { "action": "shell", "resource": "dotnet restore *", "effect": "allow" },
+        { "action": "shell", "resource": "dotnet format *", "effect": "allow" },
+        { "action": "shell", "resource": "dotnet watch *", "effect": "allow" },
+        { "action": "shell", "resource": "dotnet ef *", "effect": "allow" },
+        { "action": "shell", "resource": "mvn test *", "effect": "allow" },
+        { "action": "shell", "resource": "mvn compile *", "effect": "allow" },
+        { "action": "shell", "resource": "mvn clean *", "effect": "allow" },
+        { "action": "shell", "resource": "mvn package *", "effect": "allow" },
+        { "action": "shell", "resource": "npx tsc *", "effect": "allow" },
+        { "action": "shell", "resource": "npx vitest *", "effect": "allow" },
+        { "action": "shell", "resource": "npx playwright *", "effect": "allow" },
+        { "action": "shell", "resource": "npx eslint *", "effect": "allow" },
+        { "action": "shell", "resource": "npx prettier *", "effect": "allow" },
+        { "action": "shell", "resource": "pnpm exec *", "effect": "allow" }
+      ],
     },
 
     "general": {                               // Versatile helper agent
@@ -94,104 +91,88 @@
 
   "formatter": true,                           // Automatically format modified files on write
 
-  // Tool-level and terminal permission boundaries
-  "permission": {
-    "*": "allow",
+  // Tool-level and terminal permission boundaries.
+  // Rules are ordered and the last match wins; anything unmatched keeps the permissive catch-all below.
+  "permissions": [
+    { "action": "*", "resource": "*", "effect": "allow" },   // Global default: allow everything
 
-    "webfetch": "ask",                         // Blocks autonomous network page fetching
+    { "action": "webfetch", "resource": "*", "effect": "ask" },   // Blocks autonomous network page fetching
+    { "action": "websearch", "resource": "*", "effect": "ask" },  // Blocks live web searches to enforce local context usage
 
-    "websearch": "ask",                        // Blocks live web searches to enforce local context usage
-    "bash": {
-      "*": "ask",                              // Prompts user permission for any unlisted terminal command
+    { "action": "shell", "resource": "*", "effect": "ask" },      // Prompt for any unlisted terminal command
 
-      "git status*": "allow",                  // Quick diagnostic: check repository changes
+    { "action": "shell", "resource": "git status *", "effect": "allow" },   // Quick diagnostic: check repository changes
+    { "action": "shell", "resource": "git diff *", "effect": "allow" },     // Quick diagnostic: view code modifications
+    { "action": "shell", "resource": "git log *", "effect": "allow" },      // Quick diagnostic: check commit history
+    { "action": "shell", "resource": "git commit *", "effect": "ask" },     // Prompts before automatic code commits
+    { "action": "shell", "resource": "git push *", "effect": "ask" },       // Prompts before remote code pushing
+    { "action": "shell", "resource": "git tag *", "effect": "ask" },        // Prompts before version tagging
+    { "action": "shell", "resource": "git reset *", "effect": "deny" },     // Safety lock: prevents destructive state resets
+    { "action": "shell", "resource": "git clean *", "effect": "deny" },     // Safety lock: prevents untracked file deletion
+    { "action": "shell", "resource": "git stash *", "effect": "ask" },
+    { "action": "shell", "resource": "gh pr *", "effect": "ask" },          // Prompts before GitHub PR management
 
-      "git diff*": "allow",                    // Quick diagnostic: view code modifications
+    { "action": "shell", "resource": "grep *", "effect": "allow" },
+    { "action": "shell", "resource": "head *", "effect": "allow" },
+    { "action": "shell", "resource": "tail *", "effect": "allow" },
+    { "action": "shell", "resource": "cat *", "effect": "allow" },
+    { "action": "shell", "resource": "ls *", "effect": "allow" },
+    { "action": "shell", "resource": "ps *", "effect": "allow" },
+    { "action": "shell", "resource": "ss *", "effect": "allow" },
+    { "action": "shell", "resource": "sleep *", "effect": "allow" },
+    { "action": "shell", "resource": "seq *", "effect": "allow" },
+    { "action": "shell", "resource": "bash -n*", "effect": "allow" },
+    { "action": "shell", "resource": "echo *", "effect": "allow" },
+    { "action": "shell", "resource": "curl *", "effect": "allow" },
+  ],
 
-      "git log*": "allow",                     // Quick diagnostic: check commit history
+  "update": "notify",                          // Check for updates and notify before installing
 
-      "git commit*": "ask",                    // Prompts before automatic code commits
-
-      "git push*": "ask",                      // Prompts before remote code pushing
-
-      "git tag*": "ask",                       // Prompts before version tagging
-
-      "git reset*": "deny",                    // Safety lock: prevents destructive state resets
-
-      "git clean*": "deny",                    // Safety lock: prevents untracked file deletion
-
-      "git stash*": "ask",
-
-      "gh pr*": "ask",                         // Prompts before GitHub PR management
-
-      "grep *": "allow",
-      "head *": "allow",
-      "tail *": "allow",
-      "cat *": "allow",
-      "ls *": "allow",
-      "ps *": "allow",
-      "ss *": "allow",
-      "sleep *": "allow",
-      "seq *": "allow",
-      "bash -n*": "allow",
-      "echo *": "allow",
-      "curl *": "allow",
-    },
-  },
-
-  // Active extensions, context managers, and safety net plugins
-  // OpenCode Quota: tuiCommandDisplay chooses whether native TUI command output appears in the session transcript or a local popup dialog.
-  // OpenCode Quota: loads the server plugin for slash commands and quota checks.
-  "plugin": [
-    "@tarquinen/opencode-dcp@latest",          // Direct Context Protocol integration
-    "cc-safety-net",                           // Extra safety rails for execution
-    "envsitter-guard@latest",                  // Secrets and environment security guard
-    "opencode-ignore",                         // Respects custom ignore patterns
-    "./opencode-quota",                        // Quota/token usage — local fork (deployed by run_once_after_install-opencode-quota)
-    "opencode-handoff",                        // Handoff prompt generator — `/handoff <goal>` (OpenCode >= v1.2.15)
+  // Active extensions and safety net plugins
+  "plugins": [
+    "cc-safety-net",                           // Extra safety rails for execution (V2-compatible)
   ],
 
   // MCP servers
   "mcp": {
-    "super-productivity": {
-      "type": "local",
-      "command": ["npx", "-y", "super-productivity-mcp"],
-      "enabled": false,
-      "environment": {
-        "SP_MCP_DATA_DIR": "/mnt/c/Users/Rey/AppData/Roaming/super-productivity-mcp"
+    "servers": {
+      "super-productivity": {
+        "type": "local",
+        "command": ["npx", "-y", "super-productivity-mcp"],
+        "disabled": true,
+        "environment": {
+          "SP_MCP_DATA_DIR": "/mnt/c/Users/Rey/AppData/Roaming/super-productivity-mcp"
+        }
       }
     }
   },
 
-  // OpenCode Quota: auto-detected provider declarations (added by init).
-  "provider": {
-    // Detected openrouter authentication; opencode-quota added this global provider declaration.
+  // Auto-detected provider declarations.
+  "providers": {
     "openrouter": {},
-    // Detected opencode-go authentication; opencode-quota added this global provider declaration.
-    // "opencode-go": {},
     "command-code": {
-      "npm": "@ai-sdk/openai-compatible",
       "name": "Command Code",
-      "options": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
         "baseURL": "https://api.commandcode.ai/provider/v1",
-        "headers": {
-          "x-cmd-zdr": "1",
-        },
+      },
+      "headers": {
+        "x-cmd-zdr": "1",
       },
       {{ template "opencode/commandcode-models.jsonc" }}
     },
     "command-code-non-zdr": {
-      "npm": "@ai-sdk/openai-compatible",
       "name": "Command Code Non-ZDR",
-      "options": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
         "baseURL": "https://api.commandcode.ai/provider/v1",
       },
       {{ template "opencode/commandcode-models.jsonc" }}
     },
     "command-code-free": {
-      "npm": "@ai-sdk/openai-compatible",
       "name": "Command Code Free",
-      "options": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
         "baseURL": "https://api.commandcode.ai/provider/v1",
       },
       {{ template "opencode/commandcode-free-models.jsonc" }}

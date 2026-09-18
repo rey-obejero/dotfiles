@@ -59,10 +59,13 @@ slow, so we rely on a local clone you point `jdtls_path` at.
 
 ### Custom Providers
 
-OpenCode is configured with a custom **Command Code** (`commandcode`) provider
-that aggregates the GOAT model catalog. The full setup — provider block,
-model catalog, reasoning-effort variants, and how to edit it — is documented in
-[`documentation/opencode/commandcode.md`](./documentation/opencode/commandcode.md).
+OpenCode V2 is configured with custom **Command Code** providers
+(`command-code`, `command-code-non-zdr`, `command-code-free`) that aggregate the
+GOAT model catalog. Model metadata (cost, limits, capabilities, and
+reasoning-effort variants) is sourced entirely from
+[models.dev](https://models.dev). The full setup — provider block, model
+catalog, and how to regenerate it — is documented in
+[`documentation/opencode/providers/commandcode.md`](./documentation/opencode/providers/commandcode.md).
 
 ## Getting Started
 
@@ -75,7 +78,7 @@ This will:
 1. Clone this repo to `~/.local/share/chezmoi`.
 2. Render `.chezmoi.toml.tmpl` → `~/.config/chezmoi/chezmoi.toml`, prompting for
    `opencode_model` (with the free default offered) and `jdtls_path` (required).
-3. Apply every dotfile, templating `opencode.jsonc` and `java.lua`.
+3. Apply every dotfile, templating `opencode.jsonc`/`cli.json` and `java.lua`.
 4. Run `run_once_after_install-tpm.sh` once, which clones TPM and installs your
    tmux plugins automatically. You never need to press `prefix + I`.
 

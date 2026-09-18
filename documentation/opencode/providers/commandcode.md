@@ -1,287 +1,179 @@
-# Command Code Provider (OpenCode)
+# Command Code Provider (OpenCode V2)
 
-**TODO: Document the different provider and model types.**
+This document describes the custom **Command Code** providers used by
+[OpenCode V2](https://opencode.ai/) in
+`dot_config/opencode/opencode.jsonc.tmpl`, and the model catalog that lives in
+`.chezmoitemplates/opencode/commandcode-models.jsonc` and
+`.chezmoitemplates/opencode/commandcode-free-models.jsonc`.
 
-- Some models are available for free but without ZDR support. These
-  models are defined in `.chezmoitemplates/opencode/commandcode-free-models.jsonc`.
-- Since enforcing ZDR for all models [may result in higher costs](https://commandcode.ai/docs/resources/zdr#why-zdr-costs-more),
-  separate providers are defined for ZDR and non-ZDR requests.
-  Both provider types pull from the same `commandcode-models.jsonc`, but the default
-  `commandcode` provider does not request for ZDR via the headers.
-- Although the default provider may not explicitly request for ZDR, Command Code
-  does guarantee that most models have [ZDR enabled by default](https://commandcode.ai/docs/resources/zdr#zdr-on-goat-and-pro/).
-
-This document describes the custom **Command Code** (`commandcode`) provider
-used by [OpenCode](https://opencode.ai/). It covers the provider block in
-`dot_config/opencode/opencode.jsonc.tmpl`, the full model catalog that lives in
-`.chezmoitemplates/opencode/commandcode-models.jsonc`, and how reasoning-effort
-variants are derived and trimmed.
-
-> **ZDR (Zerodebug/Routing)**: the provider sends the `x-cmd-zdr: 1` header on
-> every request. See the header section below.
+> **V2 migration note.** OpenCode V2 uses a different config schema than V1
+> (`providers` not `provider`, `agents` not `agent`, `permissions` as an ordered
+> array, `snapshots`, `plugins`, `mcp.servers`, `update`, etc.). The provider
+> block and model entries below are written for V2.
 
 ---
 
 ## Overview
 
-Command Code is an **OpenAI-compatible aggregator**. From its docs: _"You get
-the exact model you ask for… Nothing downgraded. Nothing rerouted."_ and _"we
-don't pre-gate per model."_ It is a pass-through gateway — OpenCode talks to it
-with the standard OpenAI chat-completions shape, and it forwards to the
-requested model verbatim.
+Command Code is an **OpenAI-compatible aggregator**. OpenCode talks to it with
+the standard OpenAI chat-completions shape, and it forwards to the requested
+model verbatim.
 
 Consequences that matter for this config:
 
 - **No Command Code-specific "reasoning level" abstraction.** The provider does
-  not validate or coerce `reasoning_effort`; it accepts whatever value is sent.
-  OpenCode therefore decides which reasoning levels to expose, which is why the
-  variant handling below is so important.
-- **Authentication.** The config declares **no `apiKey`** field. You authenticate
-  once with OpenCode's `/connect`, which stores the credential keyed by the
-  **provider id** (`commandcode`) in `~/.local/share/opencode/auth.json`.
-  Because auth is keyed by provider id, **do not rename the provider id** unless
-  you are willing to re-authenticate.
+  not validate or coerce `reasoning_effort`; OpenCode decides which levels to
+  expose, which is why reasoning-effort variants are curated per model (below).
+- **Authentication.** The config declares **no `apiKey`**. Authenticate once with
+  `/connect`, which stores the credential keyed by the **provider id** in
+  OpenCode's SQLite database (`~/.local/share/opencode/opencode.db`). V2 imports
+  a legacy `auth.json` on first run. Because auth is keyed by provider id,
+  **do not rename a provider id** unless you are willing to re-authenticate.
+- **Three providers** share one model catalog:
+  - `command-code` — sends `x-cmd-zdr: 1` (Zero-Downtime Routing / ZDR).
+  - `command-code-non-zdr` — no ZDR header.
+  - `command-code-free` — free models only (`commandcode-free-models.jsonc`).
+
+Enforcing ZDR for all models [may cost more](https://commandcode.ai/docs/resources/zdr#why-zdr-costs-more),
+hence the separate providers. Command Code still guarantees most models have
+[ZDR enabled by default](https://commandcode.ai/docs/resources/zdr#zdr-on-goat-and-pro/).
 
 ---
 
 ## Provider configuration
 
-In `dot_config/opencode/opencode.jsonc.tmpl` (inside `"provider"`):
+In `dot_config/opencode/opencode.jsonc.tmpl` (inside `"providers"`):
 
 ```jsonc
-"commandcode": {
-  "npm": "@ai-sdk/openai-compatible",
+"command-code": {
   "name": "Command Code",
-  "options": {
+  "package": "@opencode/ai/providers/openai-compatible",
+  "settings": {
     "baseURL": "https://api.commandcode.ai/provider/v1",
-    "headers": {
-      "x-cmd-zdr": "1"
-    }
   },
-  "models": {{- template "opencode/commandcode-models.jsonc" }}
+  "headers": {
+    "x-cmd-zdr": "1",
+  },
+  {{ template "opencode/commandcode-models.jsonc" }}
 }
 ```
 
-| Key       | Value                                                                           |
-| --------- | ------------------------------------------------------------------------------- |
-| `npm`     | `@ai-sdk/openai-compatible` — OpenAI-compatible integration                     |
-| `name`    | `Command Code` (display name)                                                   |
-| `baseURL` | `https://api.commandcode.ai/provider/v1` (OpenAI-style endpoint)                |
-| `headers` | `x-cmd-zdr: 1` (enables Zero-Delay Routing / ZDR)                               |
-| `apiKey`  | **absent** — use `/connect` once instead                                        |
-| `models`  | injected from `.chezmoitemplates/opencode/commandcode-models.jsonc` (see below) |
+| Key        | Value                                                                    |
+| ---------- | ------------------------------------------------------------------------ |
+| `package`  | `@opencode/ai/providers/openai-compatible` — OpenAI-compatible runtime    |
+| `name`     | Display name                                                             |
+| `settings` | `baseURL` = `https://api.commandcode.ai/provider/v1`                     |
+| `headers`  | `x-cmd-zdr: 1` on `command-code` only                                    |
+| `apiKey`   | **absent** — use `/connect` once instead                                 |
+| `models`   | injected from the `.chezmoitemplates` partial (see below)                |
 
-### ZDR header
-
-`x-cmd-zdr: 1` opts in to Command Code's routing behavior. It is present on
-the `command-code` provider's `options.headers` (and applies to every request
-made through that provider), and **absent** on `command-code-non-zdr` and
-`command-code-free`.
+The `command-code-non-zdr` and `command-code-free` providers are identical
+except for the missing ZDR header and the free-model catalog.
 
 ---
 
 ## Model catalog
 
-The provider's `models` object is **not** written inline in
-`opencode.jsonc.tmpl`. It lives in a chezmoi template partial and is injected at
-render time:
+The catalog is **not** written inline. It lives in chezmoi template partials and
+is injected at render time:
 
 ```jsonc
 "models": {{- template "opencode/commandcode-models.jsonc" }}
 ```
 
 - **Source of truth:** `.chezmoitemplates/opencode/commandcode-models.jsonc`
-- **Rendered into:** `~/.config/opencode/opencode.jsonc` (via `chezmoi apply`)
-- **Size:** 68 models plus 2 in the free partial (`longcat-2.0:free`,
-  `ling-3.0-flash-sante:free`), including
-  **all 42 GOAT-plan models** and the **free** models (Laguna S 2.1 Free,
-  LongCat 2.0 Free, Ling 3.0 Flash Sante Free).
-- **Default model:** `commandcode/deepseek/deepseek-v4-flash`, set through the
-  `opencode_model` chezmoi data variable (see the main `README.md` →
-  _Configuration_ table).
+  (68 models) and `.chezmoitemplates/opencode/commandcode-free-models.jsonc`
+  (free models).
+- **Rendered into:** `~/.config/opencode/opencode.jsonc` (via `chezmoi apply`).
+- **Default model:** set through the `opencode_model` chezmoi data variable
+  (`command-code/deepseek/deepseek-v4.1-flash`).
 
-> The partial contains extra models beyond the GOAT plan (e.g. the `gpt-5.6-*`
-> family, `gemini-*`, `claude-*`, `muse-spark-1.1`). These are kept deliberately
-> so the provider is a general catalog, not a GOAT-exclusive one.
+### V2 model entry shape
 
----
-
-## Model costs and limits
-
-Each model entry carries `cost` (per-1M-token USD), `limit.context`,
-`limit.output` (where defensible), `tool_call: true`, and `modalities`
-(where `attachment: true`):
+Each model is a key in the provider's `models` map. The **key is the selectable
+id** (Command Code's upstream id); `modelID` would override the id sent to the
+provider and is not used here. Fields:
 
 ```jsonc
-"deepseek/deepseek-v4-flash": {
-  "name": "DeepSeek V4 Flash",
-  "cost": { "input": 0.15, "output": 0.60, "cache_read": 0.003 },
+"deepseek/deepseek-v4.1-flash": {
+  "name": "DeepSeek V4.1 Flash",
+  "cost": { "input": 0.15, "output": 0.6, "cache": { "read": 0.003 } },
   "limit": { "context": 1000000, "output": 384000 },
-  "tool_call": true,
-  "reasoning": true,
-  "variants": { "...": "..." }
+  "capabilities": { "tools": true, "input": ["text", "image"], "output": ["text"] },
+  "variants": [
+    { "id": "low", "settings": { "reasoningEffort": "low" } },
+    { "id": "high", "settings": { "reasoningEffort": "high" } },
+    { "id": "max", "settings": { "reasoningEffort": "max" } }
+  ]
 }
 ```
 
-### Field sources (mixed, by capability)
-
-| Field | Source | Notes |
-| ----- | ------ | ----- |
-| `cost.*` | [Command Code pricing & limits](https://commandcode.ai/docs/resources/pricing-limits), **Now/effective column** | Bakes in deal rates (MiMo V2.5/Pro, MiniMax M3) and DeepSeek **off-peak** rates. `cache_write` only where the docs table lists one. |
-| `limit.context` | `GET https://api.commandcode.ai/provider/v1/models` (`context_length`), cross-checked against the pricing table | Falls back to the pricing table's Context column (e.g. GLM-5.1 `—` → API `200000`). |
-| `limit.output` | [models.dev](https://models.dev) nearest capability-equivalent upstream entry | Resolved for all 5 initially-omitted models via exact/case-insensitive ID matches: `nemotron-3-ultra` → `65536` (unanimous across 6 providers); `Step-3.5-Flash` → `262114` (nearest same-model entry, case-insensitive); `inkling` / `inkling-small` → `262144` each; `Qwen3.7-Flash` → `65536` (majority). `Step-3.5-Flash` `limit.context` is live Command Code API (`1000000`), kept even though it differs from the 64k/262kctx variants some models.dev providers list — effective output tokens cannot exceed context. |
-| `tool_call` | models.dev nearest equivalent | All catalog models resolve to `true`. |
-| `modalities` | Derived from existing `attachment: true` | `{ input: ["text", "image"], output: ["text"] }`, text-only otherwise (field omitted). |
-
-### Known approximations (staleness guardrails)
-
-- **DeepSeek time variance.** The `cost` values are **off-peak** (17h/day + all
-  weekend). Peak hours (01–04 & 06–10 UTC, Mon–Fri) cost **2×** — OpenCode
-  cannot represent time-varying rates, so peak spend reads ~half of actual.
-- **ZDR uplift.** The ZDR provider (`x-cmd-zdr: 1`) may be served by a
-  pricier upstream than the table's mean rate; actual per-request cost is on
-  the [Usage](https://commandcode.ai/usage) page.
-- **Plan allowances are not encoded.** GOAT/Pro per-model allowances and
-  rolling windows live outside the model config.
-- **Snapshot date: 2026-09-10.** Pricing drifts (deals, upstream changes).
-  Refresh `cost` from the pricing table and `limit.context` from
-  `GET /provider/v1/models`; refresh `limit.output` from the combined
-  models.dev snapshot (`curl https://models.dev/api.json`, GNU-grep the
-  model id — ripgrep fails on the single-line JSON).
-
-### Free models
-
-`commandcode-free-models.jsonc` entries (`laguna-s-2.1-free`, `longcat-2.0:free`,
-`ling-3.0-flash-sante:free`) use zero `cost` with real `limit.context`;
-`limit.output` comes from the models.dev equivalent as above.
+| Field          | Notes                                                                 |
+| -------------- | --------------------------------------------------------------------- |
+| `name`         | Display name (from models.dev).                                        |
+| `cost`         | USD per million tokens: `input`, `output`, optional `cache.read`/`cache.write`. |
+| `limit`        | `context` and `output` token limits.                                   |
+| `capabilities` | `tools` (boolean) and accepted `input`/`output` media types.           |
+| `variants`     | Array of named reasoning-effort variants. Omitted when the model has no effort levels. |
 
 ---
 
-## Reasoning-effort variants
+## Data source: models.dev
 
-### Where the levels come from
+All metadata (cost, limits, capabilities, names, and reasoning levels) is
+sourced from [models.dev](https://models.dev). Nothing is cross-checked against
+Command Code's API, and reasoning levels are no longer hand-curated.
 
-Command Code is **not** a [models.dev](https://models.dev) provider, so OpenCode
-cannot look up each model's supported reasoning options from models.dev. For a
-custom `@ai-sdk/openai-compatible` provider, OpenCode **auto-generates** a
-default variant set:
+### Reasoning-effort policy
 
+models.dev lists the same model under many providers, each with its own
+`reasoning_options`. Those sets vary and naive aggregation is too broad (e.g.
+DeepSeek V4.1 Flash would gain `minimal`/`medium` it does not really use). The
+generator resolves a **standard** set per model:
+
+1. If the model's **first-party ("lab") provider** has an entry, use its effort
+   values. Example: `zhipuai` reports GLM-5 as toggle-only → no variants;
+   `anthropic` reports Claude Haiku 4.5 as `budget_tokens` → no variants.
+2. Otherwise, fall back to the **most common** effort set across providers.
+3. Drop `none` (it means "no reasoning", not a level).
+
+This matches the prior hand-curated levels for nearly every model (DeepSeek V4.1
+Flash → `low`/`high`/`max`, GLM-5.2 → `high`/`max`, and so on).
+
+### Regenerate the catalog
+
+The generator is `documentation/opencode/providers/generate-commandcode-models.mjs`:
+
+```sh
+cd documentation/opencode/providers
+node generate-commandcode-models.mjs           # dry run: prints a match/levels report
+node generate-commandcode-models.mjs --write   # rewrites both .chezmoitemplates partials
 ```
-{ low, medium, high }        (+ "max" if the model id contains "deepseek-v4")
+
+It downloads `https://models.dev/api.json` (cached to the OS temp dir; override
+with `MODELS_JSON=/path/to/api.json`), matches each existing Command Code key to
+a models.dev model, and writes the V2-shaped entries. The report shows the match
+quality, chosen provider, levels, and names so you can review before `--write`.
+
+After writing, render and apply:
+
+```sh
+chezmoi cat ~/.config/opencode/opencode.jsonc   # preview
+chezmoi apply
 ```
 
-For clarity, this repo sources each model's _true_ supported effort levels from
-the models.dev entries OpenCode ships for the **`opencode-go`** and
-**`opencode`** (OpenCode Zen) harness providers, which expose the same models
-with their real `reasoning_options`.
+### Known approximations
 
-### How to look up a model's reasoning options
-
-When adding or updating a model, **never conclude the reasoning levels "can't be
-verified" before running the lookup below.** Every model listed on
-[models.dev](https://models.dev) carries its real `reasoning_options` in the
-public combined catalog, so the data is almost always available.
-
-1. **Fetch the catalog.** Pull the public combined API snapshot and keep it
-   locally:
-
-   ```sh
-   curl https://models.dev/api.json > /tmp/models.json
-   ```
-
-   (Or open the same URL with a web fetch and save the response.)
-
-2. **Find the model's `reasoning_options`.** The JSON is one giant line, so a
-   line-based search tool (`rg` / the ripgrep-based search) fails with
-   `Ripgrep JSON record exceeded 65536 bytes`. Use **GNU grep** with a bounded
-   window instead:
-
-   ```sh
-   grep -oE '"<model-id>":\{.{0,500}' /tmp/models.json
-   ```
-
-   Example that works:
-
-   ```sh
-   grep -oE '"qwen3.8-flash":\{.{0,500}' /tmp/models.json
-   ```
-
-   (Note the window `.{0,500}` — ripgrep will not do this; GNU grep will.)
-
-3. **Read the `reasoning_options` array:**
-   - An `effort` entry lists the model's real effort levels in its `values`
-     array, e.g. `"values":["low","medium","xhigh"]` → variants
-     `low`/`medium`/`xhigh`. Translate each into a flat
-     `"<name>": { "reasoningEffort": "<name>" }` variant and add
-     `"disabled": true` for every auto-generated level **outside** that set.
-   - A bare `toggle` entry (no `effort` values) means there is **no**
-     low/medium/high picker → set all of `low`/`medium`/`high` to
-     `"disabled": true` (the "no effort toggles" case below).
-   - Values like `"none"` are not real effort toggles — only the meaningful
-     levels (e.g. `low`, `high`, `max`) become variants.
-
-4. **Confirm attachment/multimodality** from the same entry (`attachment: true`)
-   and mirror the closest sibling's structure in the catalog when the exact
-   config shape is ambiguous.
-
-### How OpenCode merges variants
-
-Two rules from OpenCode's source determine the final toggles:
-
-1. **Union, not replace.** OpenCode `mergeDeep`s your configured variants **on
-   top of** the auto-generated set. It does not overwrite the auto set.
-2. **`disabled: true` removes.** The _only_ way to drop an auto-generated
-   variant is to add `"<name>": { "disabled": true }`. After merging, OpenCode
-   drops disabled variants and strips the `disabled` key before the value is
-   sent to the provider (so the flag never leaks upstream).
-3. **Flat shape.** Variants use flat keys — `"high": { "reasoningEffort": "high" }`
-   — **not** a `{ "options": { ... } }` wrapper.
-
-### Strategy per model
-
-| Model family                              | What we set                                                                        | Why                                     |
-| ----------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------- |
-| Clear effort set                          | exact variants, plus `disabled: true` on auto variants outside the set             | match models.dev exactly                |
-| No effort levels (`opts = []` / `toggle`) | `reasoning: true` only, with **all** of `low`/`medium`/`high` set `disabled: true` | no effort toggles, matching the harness |
-| Unclear / conflicting per models.dev      | keep current variants, do **not** guess                                            | defer to OpenCode's defaults            |
-
-### Resulting toggles
-
-Active reasoning-effort toggles (after `disabled` trimming) by model:
-
-| Model                                                                                  | Active variants                                           |
-| -------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `deepseek/deepseek-v4-flash`                                                           | `low`, `high`, `max`                                      |
-| `deepseek/deepseek-v4-flash-vision-exp`                                                | `low`, `high`, `max`                                      |
-| `deepseek/deepseek-v4-flash-fast`                                                      | `low`, `high`, `max`                                      |
-| `deepseek/deepseek-v4.1-flash`                                                         | `low`, `high`, `max`                                      |
-| `deepseek/deepseek-v4-pro`                                                             | `high`, `max`                                             |
-| `zai-org/GLM-5`, `GLM-5.1`                                                             | _(no effort toggles)_                                     |
-| `zai-org/GLM-5.2`                                                                      | `high`, `max`                                             |
-| `zai-org/GLM-5.2-Fast`                                                                 | _(current, deferred)_                                     |
-| `zai-org/GLM-5.3`                                                                      | `low`, `high`, `max`                                      |
-| `zai-org/GLM-5.3-Flash`                                                                | `low`, `high`, `max`                                      |
-| `nvidia/nemotron-3-ultra-550b-a55b`                                                    | `medium`, `high`                                          |
-| `sakana/fugu-ultra`                                                                    | `high`, `xhigh`                                           |
-| `stepfun/Step-3.5-Flash`                                                               | `low`, `high`                                             |
-| `stepfun/Step-3.7-Flash`                                                               | `low`, `medium`, `high`                                   |
-| `tencent/hy3-paid`                                                                     | `low`, `high`                                             |
-| `tencent/hy4-preview`                                                                  | `high`                                                    |
-| `google/gemini-3.8-flash`                                                              | _(no effort toggles)_                                     |
-| `Qwen/Qwen3.7-Flash`                                                                   | `high`                                                    |
-| `Qwen/Qwen3.8-27B`                                                                     | _(current, deferred)_                                     |
-| `Qwen/Qwen3.8-Flash`                                                                   | `low`, `medium`, `xhigh`                                  |
-| `Qwen/Qwen3.7-Max`, `3.7-Plus`, `3.6-Plus`, `3.8-Max`                                  | _(no effort toggles)_                                     |
-| `Qwen/Qwen3.8-Max-0902`                                                                | `low`, `medium`, `high`, `max`                            |
-| `xiaomi/mimo-v2.5`, `v2.5-pro`                                                         | _(no effort toggles)_                                     |
-| `MiniMaxAI/MiniMax-M2.5`, `M2.7`                                                       | _(no effort toggles)_                                     |
-| `moonshotai/Kimi-K2.5`, `K2.6`, `K2.7-Code`, `K2.7-Code-Highspeed`                     | _(no effort toggles)_                                     |
-| `meituan/longcat-2.0:free`                                                             | _(no effort toggles)_                                     |
-| `inclusionai/ling-3.0-flash-sante:free`                                                | `high`                                                    |
-| all other models (`gpt-5.6-*`, `gpt-6-astra`, `gemini-*`, `claude-*`, `grok-*`, `muse-spark-*`, etc.) | full set as configured (auto subset is already supported) |
-
-_(No effort toggles)_ means reasoning is enabled but the TUI shows no
-low/medium/high/max picker — matching the model's real capabilities.
+- **Prices are models.dev's, not Command Code's.** Different providers list
+  different prices; the generator prefers the lab provider, then
+  `opencode-go`/`opencode`/`openrouter`/`vercel`. Actual Command Code billing is
+  on the [Usage](https://commandcode.ai/usage) page and may differ.
+- **Fuzzy matches.** Two keys have no exact models.dev equivalent and use the
+  closest model: `deepseek/deepseek-v4-flash-fast` → `deepseek-v4-flash`, and
+  `tencent/hy3-paid` → `hy3`. Revisit these if Command Code exposes distinct
+  entries.
+- **Free models are zeroed.** Entries in `commandcode-free-models.jsonc` are
+  forced to zero cost regardless of models.dev pricing.
 
 ---
 
@@ -292,7 +184,9 @@ Per `AGENTS.md` — **never edit the deployed file**
 overwritten on the next `chezmoi apply`.
 
 - Provider block: edit `dot_config/opencode/opencode.jsonc.tmpl`.
-- Model catalog / variants: edit `.chezmoitemplates/opencode/commandcode-models.jsonc`.
+- Model catalog: edit the `.chezmoitemplates/opencode/*.jsonc` partials, or
+  regenerate them from models.dev with the script above.
 - Render preview: `chezmoi cat ~/.config/opencode/opencode.jsonc`.
 - Apply: `chezmoi apply`.
-- Inspect: `chezmoi diff` / `chezmoi status`.
+- Inspect: `chezmoi diff` / `chezmoi status`; validate with
+  `opencode debug config`.
