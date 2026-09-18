@@ -14,9 +14,6 @@ opencode_model = "{{ promptStringOnce . "opencode_model" "Default OpenCode model
 # Optional per-agent overrides. Leave empty to inherit opencode_model.
 opencode_model_plan = "{{ promptStringOnce . "opencode_model_plan" "Model for the plan agent? (empty = default)" "" }}"
 opencode_model_build = "{{ promptStringOnce . "opencode_model_build" "Model for the build agent? (empty = default)" "" }}"
-opencode_model_general = "{{ promptStringOnce . "opencode_model_general" "Model for the general agent? (empty = default)" "" }}"
-opencode_model_explore = "{{ promptStringOnce . "opencode_model_explore" "Model for the explore agent? (empty = default)" "" }}"
-opencode_model_scout = "{{ promptStringOnce . "opencode_model_scout" "Model for the scout agent? (empty = default)" "" }}"
 
 # --- Eclipse JDT Language Server ---
 {{ $jdtls_auto := promptBoolOnce . "jdtls_auto" "Install `jdtls` automatically to ~/.local/share/jdtls/current? [Y/n] " true -}}
