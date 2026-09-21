@@ -7,5 +7,7 @@ vim.keymap.set("n", "<leader>`", function()
   --     vim.cmd("bd " .. buf)
   --   end
   -- end
-  Snacks.dashboard()
+  -- `win = 0` opens the dashboard in the current window instead of a
+  -- full-screen float, so the neo-tree sidebar stays visible.
+  Snacks.dashboard({ win = 0 })
 end, { desc = "Display the dashboard" })
