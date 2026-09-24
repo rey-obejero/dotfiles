@@ -17,6 +17,8 @@
       "limit": { "context": 262144, "output": 32768 },
       "capabilities": { "tools": true, "input": ["text"], "output": ["text"] },
       "variants": [
+        { "id": "low", "settings": { "reasoningEffort": "low" } },
+        { "id": "medium", "settings": { "reasoningEffort": "medium" } },
         { "id": "high", "settings": { "reasoningEffort": "high" } }
       ]
     },

@@ -82,7 +82,7 @@ is injected at render time:
 ```
 
 - **Source of truth:** `.chezmoitemplates/opencode/commandcode-models.jsonc`
-  (68 models) and `.chezmoitemplates/opencode/commandcode-free-models.jsonc`
+  (79 models) and `.chezmoitemplates/opencode/commandcode-free-models.jsonc`
   (free models).
 - **Rendered into:** `~/.config/opencode/opencode.jsonc` (via `chezmoi apply`).
 - **Default model:** set through the `opencode_model` chezmoi data variable

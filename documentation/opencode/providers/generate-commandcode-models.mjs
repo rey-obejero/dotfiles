@@ -36,20 +36,21 @@ const WRITE = process.argv.includes("--write")
 const MAIN_KEYS = [
   "deepseek/deepseek-v4-flash","deepseek/deepseek-v4-flash-vision-exp","deepseek/deepseek-v4-pro",
   "deepseek/deepseek-v4-flash-fast","deepseek/deepseek-v4.1-flash",
-  "zai-org/GLM-5","zai-org/GLM-5.1","zai-org/GLM-5.2","zai-org/GLM-5.2-Fast","zai-org/GLM-5.3","z-ai/GLM-5.3-Flash",
-  "gpt-5.3-codex","gpt-5.4","gpt-5.4-mini","gpt-5.5","gpt-5.6-luna","gpt-5.6-sol","gpt-5.6-terra","gpt-6-astra",
+  "zai-org/GLM-5","zai-org/GLM-5.1","zai-org/GLM-5.2","zai-org/GLM-5.2-Fast","zai-org/GLM-5.3","z-ai/GLM-5.3-Flash","z-ai/glm-5.3-flashx",
+  "gpt-5.3-codex","gpt-5.4","gpt-5.4-mini","gpt-5.5","gpt-5.6-luna","gpt-5.6-sol","gpt-5.6-terra","gpt-6-astra","gpt-6-luna","gpt-6-sol",
   "google/gemini-3.1-flash-lite","google/gemini-3.5-flash","google/gemini-3.5-flash-lite","google/gemini-3.6-flash",
   "google/gemini-3.7-flash","google/gemini-3.8-flash",
   "meta/muse-spark-1.1","meta/muse-spark-1.2","meta/muse-spark-1.2-contributor","meta/muse-spark-1.3","meta/muse-spark-1.3-contributor",
   "MiniMaxAI/MiniMax-M2.5","MiniMaxAI/MiniMax-M2.7","MiniMaxAI/MiniMax-M3",
   "moonshotai/Kimi-K2.5","moonshotai/Kimi-K2.6","moonshotai/Kimi-K2.7-Code","moonshotai/Kimi-K2.7-Code-Highspeed","moonshotai/Kimi-K3",
   "nvidia/nemotron-3-ultra-550b-a55b",
-  "claude-fable-5","claude-fable-5-1","claude-haiku-4-5","claude-opus-4-7","claude-opus-4-8","claude-opus-5","claude-sonnet-4-6","claude-sonnet-5",
-  "poolside/laguna-s-2.1-free","sakana/fugu-ultra","stepfun/Step-3.5-Flash","stepfun/Step-3.7-Flash",
+  "claude-fable-5","claude-fable-5-1","claude-haiku-4-5","claude-opus-4-7","claude-opus-4-8","claude-opus-5","claude-opus-5-5","claude-sonnet-4-6","claude-sonnet-5",
+  "poolside/laguna-s-2.1-free","sakana/fugu-ultra","stepfun/Step-3.5-Flash","stepfun/Step-3.7-Flash","stepfun/Step-5-Preview",
   "tencent/hy3-paid","tencent/hy4-preview","thinkingmachines/inkling","thinkingmachines/inkling-small",
-  "xai/grok-4.5","xai/grok-4.6","xiaomi/mimo-v2.5","xiaomi/mimo-v2.5-pro",
+  "xai/grok-4.5","xai/grok-4.6","xai/grok-4.7","xiaomi/mimo-v2.5","xiaomi/mimo-v2.5-pro","xiaomi/mimo-v2.6-flash","xiaomi/mimo-v2.6-pro","xiaomi/mimo-v2.6-pro-ultraspeed",
   "Qwen/Qwen3.6-Max-Preview","Qwen/Qwen3.6-Plus","Qwen/Qwen3.7-Flash","Qwen/Qwen3.7-Max","Qwen/Qwen3.7-Plus",
-  "Qwen/Qwen3.8-27B","Qwen/Qwen3.8-Flash","Qwen/Qwen3.8-Max","Qwen/Qwen3.8-Max-0902",
+  "Qwen/Qwen3.8-27B","Qwen/Qwen3.8-Flash","Qwen/Qwen3.8-Max","Qwen/Qwen3.8-Max-0902","Qwen/Qwen3.8-Omni-Flash",
+  "meituan/LongCat-2.0",
 ]
 const FREE_KEYS = ["meituan/longcat-2.0:free","inclusionai/ling-3.0-flash-sante:free","stealth/space-bunny-alpha"]
 
@@ -261,6 +262,7 @@ const groups = [
   { label: "xAI / Grok", keys: MAIN_KEYS.filter(k => k.startsWith("xai/")) },
   { label: "Xiaomi", keys: MAIN_KEYS.filter(k => k.startsWith("xiaomi/")) },
   { label: "Alibaba / Qwen", keys: MAIN_KEYS.filter(k => k.startsWith("Qwen/")) },
+  { label: "Meituan", keys: MAIN_KEYS.filter(k => k.startsWith("meituan/")) },
 ]
 // sanity: all keys covered
 const covered = new Set(groups.flatMap(g => g.keys))
