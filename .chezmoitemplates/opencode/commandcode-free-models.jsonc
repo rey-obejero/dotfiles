@@ -19,5 +19,20 @@
       "variants": [
         { "id": "high", "settings": { "reasoningEffort": "high" } }
       ]
+    },
+
+    // ---- Stealth ----
+    "stealth/space-bunny-alpha": {
+      "name": "Space Bunny Alpha",
+      "cost": { "input": 0, "output": 0, "cache": { "read": 0 } },
+      "limit": { "context": 1000000, "output": 524288 },
+      "capabilities": { "tools": true, "input": ["text","image","video"], "output": ["text"] },
+      "variants": [
+        { "id": "low", "settings": { "reasoningEffort": "low" } },
+        { "id": "medium", "settings": { "reasoningEffort": "medium" } },
+        { "id": "high", "settings": { "reasoningEffort": "high" } },
+        { "id": "xhigh", "settings": { "reasoningEffort": "xhigh" } },
+        { "id": "max", "settings": { "reasoningEffort": "max" } }
+      ]
     }
   }

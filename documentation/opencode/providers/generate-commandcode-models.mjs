@@ -51,7 +51,7 @@ const MAIN_KEYS = [
   "Qwen/Qwen3.6-Max-Preview","Qwen/Qwen3.6-Plus","Qwen/Qwen3.7-Flash","Qwen/Qwen3.7-Max","Qwen/Qwen3.7-Plus",
   "Qwen/Qwen3.8-27B","Qwen/Qwen3.8-Flash","Qwen/Qwen3.8-Max","Qwen/Qwen3.8-Max-0902",
 ]
-const FREE_KEYS = ["meituan/longcat-2.0:free","inclusionai/ling-3.0-flash-sante:free"]
+const FREE_KEYS = ["meituan/longcat-2.0:free","inclusionai/ling-3.0-flash-sante:free","stealth/space-bunny-alpha"]
 
 const VENDOR_LAB = {
   "zai-org":"zhipuai","z-ai":"zhipuai","qwen":"alibaba","minimaxai":"minimax","moonshotai":"moonshotai",
@@ -298,6 +298,7 @@ if(WRITE){
   const freeGroups = [
     { label: "Meituan", keys: FREE_KEYS.filter(k => k.startsWith("meituan/")) },
     { label: "InclusionAI", keys: FREE_KEYS.filter(k => k.startsWith("inclusionai/")) },
+    { label: "Stealth", keys: FREE_KEYS.filter(k => k.startsWith("stealth/")) },
   ]
   const freeBlocks = []
   for(const g of freeGroups){
