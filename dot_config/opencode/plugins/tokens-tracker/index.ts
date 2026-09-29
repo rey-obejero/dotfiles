@@ -6,6 +6,6 @@
 // specifier (only "@opencode/plugin/tui" is provided by the runtime), so this
 // exports the plugin object directly instead of using Plugin.define.
 export default {
-  id: "token-tracker",
+  id: "tokens-tracker",
   setup() {},
 }
