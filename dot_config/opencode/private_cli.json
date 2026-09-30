@@ -18,13 +18,14 @@
   "attention": {
     "notifications": true,
     "sound": true,
+    "volume": 0.9999999999999999,
   },
   "terminal": {
     "copy": "select",
     "title": true,
   },
   "prompt": {
-    "image_preview": true,
+    "image_preview": false,
   },
   "tabs": {
     "layout": "horizontal",
