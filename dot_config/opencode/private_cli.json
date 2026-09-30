@@ -21,7 +21,7 @@
     "volume": 0.9999999999999999,
   },
   "terminal": {
-    "copy": "select",
+    "copy": "manual",
     "title": true,
   },
   "prompt": {
