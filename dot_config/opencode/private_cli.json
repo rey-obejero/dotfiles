@@ -8,7 +8,7 @@
   },
   "animations": true,
   "session": {
-    "sidebar": "auto",
+    "sidebar": "hide",
     "scrollbar": false,               // Hide the session scrollbar
     "thinking": "hide",               // Hide thinking blocks by default
     "image_preview": false,
