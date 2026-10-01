@@ -91,7 +91,7 @@ function TokenFooter(props: { sessionID?: string }) {
     const hit = cacheHitRate(t);
     // OpenCode renders its context/cost figures after our slot, so end our
     // segment with a separator to keep the two groups visually distinct.
-    return `${formatCompact(t.input)} · ${formatCompact(t.cache.read)}${hit === undefined ? "" : ` (${hit}%)`} · ${formatCompact(t.output)} ·`;
+    return `${formatCompact(t.input)}\t|\t${formatCompact(t.cache.read)}${hit === undefined ? "" : ` (${hit}%)`}\t|\t${formatCompact(t.output)}\t|`;
   });
 
   return (
