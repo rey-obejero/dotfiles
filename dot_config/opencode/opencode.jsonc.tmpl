@@ -3,12 +3,12 @@
 
   "snapshots": false,
 
-  "shell": "zsh",                              // Preferred terminal shell for command executions
+  "shell": "zsh", // Preferred terminal shell for command executions
 
-  {{- $global := .opencode_model | default "opencode/deepseek-v4-flash-free" }}
-  "model": "{{ $global }}",                    // Global default model fallback
+  {{- $global := .opencode_model | default "deepseek/deepseek-flash" }}
+  "model": "{{ $global }}", // Global default model fallback
 
-  "default_agent": "plan",                     // New sessions start in the read-only plan agent
+  "default_agent": "plan", // New sessions start in the read-only plan agent
 
   // Only overrides that add something. The built-in sub-agents (general,
   // explore) are left untouched, so they keep their factory prompts,
@@ -24,13 +24,25 @@
         { "action": "shell", "resource": "npm run build *", "effect": "allow" },
         { "action": "shell", "resource": "npm run lint *", "effect": "allow" },
         { "action": "shell", "resource": "npm run test *", "effect": "allow" },
-        { "action": "shell", "resource": "npm run typecheck *", "effect": "allow" },
-        { "action": "shell", "resource": "npm run format *", "effect": "allow" },
+        {
+          "action": "shell",
+          "resource": "npm run typecheck *",
+          "effect": "allow",
+        },
+        {
+          "action": "shell",
+          "resource": "npm run format *",
+          "effect": "allow",
+        },
         { "action": "shell", "resource": "npm test *", "effect": "allow" },
         { "action": "shell", "resource": "pnpm build *", "effect": "allow" },
         { "action": "shell", "resource": "pnpm lint *", "effect": "allow" },
         { "action": "shell", "resource": "pnpm test *", "effect": "allow" },
-        { "action": "shell", "resource": "pnpm typecheck *", "effect": "allow" },
+        {
+          "action": "shell",
+          "resource": "pnpm typecheck *",
+          "effect": "allow",
+        },
         { "action": "shell", "resource": "pnpm format *", "effect": "allow" },
         { "action": "shell", "resource": "pnpm check *", "effect": "allow" },
         { "action": "shell", "resource": "npx tsc *", "effect": "allow" },
@@ -42,14 +54,18 @@
         { "action": "shell", "resource": "mvn package *", "effect": "allow" },
         { "action": "shell", "resource": "dotnet build *", "effect": "allow" },
         { "action": "shell", "resource": "dotnet test *", "effect": "allow" },
-        { "action": "shell", "resource": "dotnet restore *", "effect": "allow" },
+        {
+          "action": "shell",
+          "resource": "dotnet restore *",
+          "effect": "allow",
+        },
         { "action": "shell", "resource": "dotnet format *", "effect": "allow" },
-        { "action": "shell", "resource": "dotnet ef *", "effect": "allow" }
+        { "action": "shell", "resource": "dotnet ef *", "effect": "allow" },
       ],
     },
   },
 
-  "formatter": true,                           // Automatically format modified files on write
+  "formatter": true, // Automatically format modified files on write
 
   // Guardrails first, then the read-only allowlist. There is deliberately no
   // catch-all allow: the factory base policy stays intact, which preserves the
@@ -83,39 +99,8 @@
     { "action": "shell", "resource": "bash -n*", "effect": "allow" },
   ],
 
-  // Active extensions and safety net plugins
-  "plugins": [
-    "cc-safety-net",                           // Extra safety rails for execution (V2-compatible)
-  ],
-
-  // Auto-detected provider declarations.
-  "providers": {
-    "command-code": {
-      "name": "Command Code",
-      "package": "@opencode/ai/providers/openai-compatible",
-      "settings": {
-        "baseURL": "https://api.commandcode.ai/provider/v1",
-      },
-      "headers": {
-        "x-cmd-zdr": "1",
-      },
-      {{ template "opencode/commandcode-models.jsonc" }}
-    },
-    "command-code-non-zdr": {
-      "name": "Command Code Non-ZDR",
-      "package": "@opencode/ai/providers/openai-compatible",
-      "settings": {
-        "baseURL": "https://api.commandcode.ai/provider/v1",
-      },
-      {{ template "opencode/commandcode-models.jsonc" }}
-    },
-    "command-code-free": {
-      "name": "Command Code Free",
-      "package": "@opencode/ai/providers/openai-compatible",
-      "settings": {
-        "baseURL": "https://api.commandcode.ai/provider/v1",
-      },
-      {{ template "opencode/commandcode-free-models.jsonc" }}
-    }
-  }
+  // Active extensions and safety net plugins.
+  // Command Code models/providers are supplied by the opencode-cmd-provider
+  // plugin, so there is no hand-maintained "providers" block here.
+  "plugins": ["cc-safety-net", "opencode-cmd-provider"],
 }

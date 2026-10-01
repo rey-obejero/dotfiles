@@ -9,11 +9,14 @@
   "animations": true,
   "session": {
     "sidebar": "auto",
+    "scrollbar": false,               // Hide the session scrollbar
+    "thinking": "hide",               // Hide thinking blocks by default
     "image_preview": false,
     "permissions": "prompt",
   },
   "diffs": {
     "view": "auto",
+    "wrap": "word",                   // Word-wrap long diff lines
   },
   "attention": {
     "notifications": true,
@@ -21,7 +24,7 @@
     "volume": 0.9999999999999999,
   },
   "terminal": {
-    "copy": "manual",
+    "copy": "manual",                 // Copy on explicit selection only
     "title": true,
   },
   "prompt": {
@@ -31,4 +34,8 @@
     "layout": "horizontal",
     "indicators": "status",
   },
+  "scroll": {
+    "speed": 3,
+  },
+  "plugins": ["opencode-vim", "oc-tps"],
 }
