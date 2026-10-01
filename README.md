@@ -1,8 +1,6 @@
 # Dotfiles
 
-Machine-agnostic, transferrable dotfiles managed with [chezmoi](https://www.chezmoi.io/).
-
-![Screenshot](./assets/screenshot.png)
+![Terminal Screenshot](./documentation/assets/screenshot.png)
 
 ## Table of Contents
 
@@ -154,18 +152,18 @@ hash changed — for new plugins use `prefix + I`).
 `<prefix>` is `C-b` (Ctrl-b) by default. The custom binds below are defined in
 `dot_tmux.conf`; the rest are provided by `tmux-sensible` and `tmux-resurrect`.
 
-| Key                                   | Action                                                                  | Defined by     |
-| ------------------------------------- | ----------------------------------------------------------------------- | -------------- |
-| `prefix + c`                          | New window **after** the current one (`new-window -a`)                  | custom         |
-| `prefix + C`                          | New window **before** the current one (`new-window -b`)                 | custom         |
-| `prefix + b`                          | Jump to the **last** (previously active) window (`last-window`)         | custom         |
-| `prefix + <` / `prefix + >`           | Move current window left / right, **keeping focus** on it               | custom         |
-| `prefix + &`                          | Kill the current window (with confirmation)                             | custom         |
-| `prefix + K`                          | Kill the entire tmux server (with confirmation)                             | custom         |
-| `prefix + X`                          | Kill the current session (with confirmation)                                | custom         |
-| `prefix + R`                          | Reload the tmux config                                                  | tmux-sensible  |
-| `prefix + C-p` / `prefix + C-n`       | Previous / next window                                                  | tmux-sensible  |
-| `prefix + Ctrl-s` / `prefix + Ctrl-r` | Save / restore the session                                              | tmux-resurrect |
+| Key                                   | Action                                                          | Defined by     |
+| ------------------------------------- | --------------------------------------------------------------- | -------------- |
+| `prefix + c`                          | New window **after** the current one (`new-window -a`)          | custom         |
+| `prefix + C`                          | New window **before** the current one (`new-window -b`)         | custom         |
+| `prefix + b`                          | Jump to the **last** (previously active) window (`last-window`) | custom         |
+| `prefix + <` / `prefix + >`           | Move current window left / right, **keeping focus** on it       | custom         |
+| `prefix + &`                          | Kill the current window (with confirmation)                     | custom         |
+| `prefix + K`                          | Kill the entire tmux server (with confirmation)                 | custom         |
+| `prefix + X`                          | Kill the current session (with confirmation)                    | custom         |
+| `prefix + R`                          | Reload the tmux config                                          | tmux-sensible  |
+| `prefix + C-p` / `prefix + C-n`       | Previous / next window                                          | tmux-sensible  |
+| `prefix + Ctrl-s` / `prefix + Ctrl-r` | Save / restore the session                                      | tmux-resurrect |
 
 ## Typical Daily Workflow
 
