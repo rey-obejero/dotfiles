@@ -1,7 +1,7 @@
 {
   "surface": "prompt.footer.status",
   "usage": {
-    "segments": ["diff", "time", "meter", "cost", "cache", "context"],
+    "segments": ["diff", "time", "cost", "meter", "cache", "context"],
     "labels": "icons",
     "separator": " │ "
   },
