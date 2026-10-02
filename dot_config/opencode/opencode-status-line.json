@@ -1,0 +1,9 @@
+{
+  "surface": "app",
+  "usage": {
+    "segments": ["shells", "context", "cache", "meter", "cost", "time", "diff"],
+    "labels": "words"
+  },
+  "cap": { "mode": "none" },
+  "colors": { "enabled": false }
+}

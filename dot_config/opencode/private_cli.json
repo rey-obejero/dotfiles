@@ -1,41 +1,40 @@
 {
   "$schema": "https://opencode.ai/v2/cli.json",
 
-  // Terminal UI settings for OpenCode V2 (managed by chezmoi).
   "theme": {
-    "mode": "light",                  // Pin light mode (override terminal auto-detect)
-    "name": "github",
+    "mode": "light",
+    "name": "github"
   },
   "animations": true,
   "session": {
     "sidebar": "hide",
-    "scrollbar": false,               // Hide the session scrollbar
-    "thinking": "hide",               // Hide thinking blocks by default
+    "scrollbar": false,
+    "thinking": "hide",
     "image_preview": false,
-    "permissions": "prompt",
+    "permissions": "prompt"
   },
   "diffs": {
     "view": "auto",
-    "wrap": "word",                   // Word-wrap long diff lines
+    "wrap": "word"
   },
   "attention": {
     "notifications": true,
     "sound": true,
-    "volume": 0.9999999999999999,
+    "volume": 0.9999999999999999
   },
   "terminal": {
-    "copy": "manual",                 // Copy on explicit selection only
-    "title": true,
+    "copy": "manual",
+    "title": true
   },
   "prompt": {
-    "image_preview": false,
+    "image_preview": false
   },
   "tabs": {
     "layout": "horizontal",
-    "indicators": "status",
+    "indicators": "status"
   },
   "scroll": {
-    "speed": 3,
+    "speed": 3
   },
-  "plugins": ["opencode-vim", "oc-tps"],
+  "plugins": ["opencode-vim"]
 }
