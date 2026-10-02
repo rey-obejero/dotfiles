@@ -27,11 +27,12 @@
     "title": true
   },
   "prompt": {
-    "image_preview": false
+    "image_preview": false,
+    "editor": true
   },
   "tabs": {
     "layout": "horizontal",
-    "indicators": "status"
+    "indicators": "numbers"
   },
   "scroll": {
     "speed": 3
