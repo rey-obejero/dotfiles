@@ -27,8 +27,7 @@
     "title": true
   },
   "prompt": {
-    "image_preview": false,
-    "editor": true
+    "image_preview": false
   },
   "tabs": {
     "layout": "horizontal",
@@ -37,5 +36,5 @@
   "scroll": {
     "speed": 3
   },
-  "plugins": ["opencode-vim"]
+  "plugins": ["opencode-vim", "-opencode.prompt.footer"]
 }
