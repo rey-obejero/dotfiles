@@ -21,7 +21,6 @@
     "status-line"
   ],
   "exports": {
-    ".": "./index.ts",
     "./tui": "./src/tui.tsx"
   },
   "files": [
