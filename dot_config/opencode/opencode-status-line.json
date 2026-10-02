@@ -3,7 +3,7 @@
   "usage": {
     "segments": ["diff", "time", "meter", "cost", "cache", "context"],
     "labels": "icons",
-    "separator": " │ "
+    "separator": " | "
   },
   "cap": { "mode": "none" },
   "colors": { "enabled": false }
