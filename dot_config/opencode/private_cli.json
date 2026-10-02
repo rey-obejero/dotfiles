@@ -36,5 +36,5 @@
   "scroll": {
     "speed": 3
   },
-  "plugins": ["opencode-vim"]
+  "plugins": ["opencode-vim", "@rashidrazak/opencode-status-line"]
 }
