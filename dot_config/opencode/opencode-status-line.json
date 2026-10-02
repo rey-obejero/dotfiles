@@ -5,5 +5,5 @@
     "labels": "words"
   },
   "cap": { "mode": "none" },
-  "colors": { "enabled": false }
+  "colors": { "enabled": true }
 }

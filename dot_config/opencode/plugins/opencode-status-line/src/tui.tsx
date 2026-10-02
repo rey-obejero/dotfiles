@@ -52,7 +52,6 @@ import {
   peakTps,
   recordedSteps,
   restoreFinal,
-  speedTone,
   tpsStats,
   USAGE_LABELS,
 } from "./rate.ts"
@@ -521,7 +520,11 @@ export default Plugin.define({
         const lead = index > 0 ? " · " : runs.length > 0 ? " " : ""
         runs.push({
           text: `${lead}${reading.label} ${formatRate(reading.tps)}`,
-          tone: speedTone(reading.tps, config.fastTps, config.slowTps),
+          // Local patch: the speed readings draw in the body ink. The context
+          // bar and the diff counter are the only status-coloured segments, so
+          // a green/amber/red tok/s figure is noise rather than signal. Upstream
+          // calls speedTone(reading.tps, config.fastTps, config.slowTps) here.
+          tone: undefined,
           dim: !reading.live,
         })
       })
