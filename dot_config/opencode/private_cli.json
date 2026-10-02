@@ -36,5 +36,5 @@
   "scroll": {
     "speed": 3
   },
-  "plugins": ["opencode-vim", "-opencode.prompt.footer"]
+  "plugins": ["opencode-vim"]
 }

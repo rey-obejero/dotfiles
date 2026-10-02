@@ -1,9 +1,9 @@
 {
-  "surface": "prompt.footer",
+  "surface": "prompt.footer.status",
   "usage": {
-    "segments": ["shells", "context", "cache", "meter", "cost", "time", "diff"],
-    "labels": "words"
+    "segments": ["time", "diff", "meter", "cache"],
+    "labels": "icons"
   },
   "cap": { "mode": "none" },
-  "colors": { "enabled": true }
+  "colors": { "enabled": false }
 }
