@@ -38,6 +38,7 @@
   },
   "plugins": [
     "opencode-vim",
-    "./plugins/opencode-status-line"
+    "./plugins/opencode-status-line",
+    "-opencode.prompt.footer"
   ]
 }

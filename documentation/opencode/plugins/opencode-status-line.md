@@ -13,7 +13,7 @@ place rather than configured.
 ```text
 dot_config/opencode/
 ├── private_cli.json               ← plugins: "./plugins/opencode-status-line"
-├── opencode-status-line.json      ← grants: words, order, separator, no gauge
+├── opencode-status-line.json      ← config: words, order, separator, no gauge
 └── plugins/opencode-status-line/ ← the vendored, patched plugin
     ├── LICENSE
     ├── package.json
@@ -34,17 +34,17 @@ Deployed to `~/.config/opencode/plugins/opencode-status-line`.
 | Parenthesised counts | `82.4% — 63` becomes `82.4% (63)` |
 | Metric unit | `tok/s` becomes `t/s` |
 | Segment order | Shells, Diff, Cost, Speed, Cache, Context, Time |
-| Separator | Unchanged: a tab between segments; the middle dot stays the meter's |
+| Separator | Middle dot (` · `) between segments |
 
-The line renders as (segments joined by a tab):
+The line renders as:
 
 ```text
-2 shells	+42 -7	$0.75	TPS 261 · AVG 159 t/s	CACHE 99.8% (571.8k)	CONTEXT 57% (572.7k)	2h07m
+2 shells · +42 -7 · $0.75 · TPS 261 · AVG 159 t/s · CACHE 99.8% (571.8k) · CONTEXT 57% (572.7k) · 2h07m
 ```
 
-The middle dot appears only inside the meter, between `TPS` and `AVG`. `shells`
-hides itself when no command is running, so the line shifts right whenever a
-shell starts or stops.
+The meter and the segments share the same middle dot, so the line reads as one
+row of dots. `shells` hides itself when no command is running, so the line
+shifts right whenever a shell starts or stops.
 
 ## Upstream base
 
@@ -94,15 +94,20 @@ stats dialog.
   "usage": {
     "segments": ["shells", "diff", "cost", "meter", "cache", "context", "time"],
     "labels": "words",
-    "separator": "\t"
+    "separator": " · "
   },
   "cap": { "mode": "none" },
   "colors": { "enabled": true }
 }
 ```
 
-Only `usage.segments` and `usage.labels` changed from the previous status-line
-config; `surface`, `separator` and `colors` were already set and are kept.
+`usage.segments`, `usage.labels` and `usage.separator` changed from the
+previous status-line config; `surface`, `cap.mode` and `colors` were already
+set and are kept.
+
+The line shares its row with OpenCode's own footer text, so the width it gets
+depends on how long the current path is. If the last segment ever looks cut
+off, move the line to its own full-width row with `"surface": "app"`.
 
 The plugin loads this file with `JSON.parse`, so it must stay **comment-free** —
 unlike the JSONC configs beside it. A comment makes the whole file invalid and
