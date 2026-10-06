@@ -1,8 +1,8 @@
 {
   "surface": "prompt.footer.status",
   "usage": {
-    "segments": ["diff", "time", "meter", "cache"],
-    "labels": "icons",
+    "segments": ["shells", "diff", "cost", "meter", "cache", "context", "time"],
+    "labels": "words",
     "separator": "\t"
   },
   "cap": { "mode": "none" },

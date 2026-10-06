@@ -38,6 +38,6 @@
   },
   "plugins": [
     "opencode-vim",
-    "@rashidrazak/opencode-status-line"
+    "./plugins/opencode-status-line"
   ]
 }

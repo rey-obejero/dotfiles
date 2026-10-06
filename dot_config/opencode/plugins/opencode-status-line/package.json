@@ -1,0 +1,55 @@
+{
+  "name": "@rashidrazak/opencode-status-line",
+  "version": "1.2.0",
+  "description": "A live status line for OpenCode v2's terminal UI — context window, cache, streaming speed, cost, elapsed time and uncommitted changes in one configurable row.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Rashid Razak <bib.nexus@gmail.com>",
+  "homepage": "https://github.com/rashidrazak/opencode-status-line#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rashidrazak/opencode-status-line.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rashidrazak/opencode-status-line/issues"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "tui",
+    "statusline",
+    "status-line"
+  ],
+  "exports": {
+    "./tui": "./dist/tui.js"
+  },
+  "files": [
+    "src",
+    "dist",
+    "assets",
+    "tsconfig.json"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "build:entry": "bun scripts/build-entry.mjs",
+    "check:pack": "node scripts/check-pack.mjs",
+    "prepublishOnly": "bun run build:entry && bun test && node scripts/check-pack.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "bun@1.3.14",
+  "dependencies": {
+    "@opencode/plugin": "latest"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.5.10",
+    "@opentui/solid": ">=0.5.10",
+    "solid-js": ">=1.9.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2"
+  }
+}
