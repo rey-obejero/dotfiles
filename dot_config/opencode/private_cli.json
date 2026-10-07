@@ -37,7 +37,13 @@
     "speed": 3
   },
   "plugins": [
-    "opencode-vim",
+    {
+      "package": "vimcode@git+https://github.com/oribarilan/vimcode.git#v0.19.1",
+      "options": {
+        "modeIndicator": "none",
+        "startMode": "normal"
+      }
+    },
     "./plugins/opencode-status-line",
     "-opencode.prompt.footer"
   ]
