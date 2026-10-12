@@ -43,18 +43,19 @@ export function diffTotals(files: readonly StatusFile[] | undefined): DiffStat {
 /** One side of the counter: the sign says which side, the tone follows it. */
 export interface DiffPart {
   side: "added" | "deleted"
-  /** `+12`, `-3` — signed, and compact past a thousand. */
+  /** `+12`, `−3` — signed, and compact past a thousand. */
   text: string
 }
 
 /**
- * The counter's pieces for a stat: `+12 -3`. A zero side drops out, so a clean
- * tree draws nothing and the segment disappears along with its separator.
+ * The counter's pieces for a stat: `+12 −3`. The deleted side wears a minus
+ * sign (U+2212), not a hyphen. A zero side drops out, so a clean tree draws
+ * nothing and the segment disappears along with its separator.
  */
 export function diffParts(stat: DiffStat): DiffPart[] {
   const parts: DiffPart[] = []
   if (stat.added > 0) parts.push({ side: "added", text: `+${compact(stat.added)}` })
-  if (stat.deleted > 0) parts.push({ side: "deleted", text: `-${compact(stat.deleted)}` })
+  if (stat.deleted > 0) parts.push({ side: "deleted", text: `−${compact(stat.deleted)}` })
   return parts
 }
 

@@ -868,7 +868,7 @@ export interface UsageLabels {
 }
 
 export const USAGE_LABELS: Record<LabelStyle, UsageLabels> = {
-  words: { sliding: "TPS", average: "AVG", settled: "DONE", cache: "CACHE", context: "CONTEXT" },
+  words: { sliding: "", average: "avg", settled: "done", cache: "cache", context: "ctx" },
   icons: { sliding: "↯", average: "μ", settled: "✓", cache: "⧉", context: "" },
 }
 
@@ -992,17 +992,16 @@ function weightedRate(samples: readonly TurnSample[]): number {
 }
 
 /**
- * `8.3`, ` 47`, `198` — a fixed three-character field, so the line never shifts
- * as the figure moves between digits. Tenths below ten, whole numbers above,
- * and `k` for the rare figure past a thousand; every branch pads or rounds to
- * exactly three characters.
+ * `8.3`, `47`, `198` — tenths below ten, whole numbers above, and `k` for the
+ * rare figure past a thousand. No padding: the figure is as wide as it needs to
+ * be, so the line hugs its readings rather than holding a fixed field.
  */
 export function formatRate(tps: number): string {
   const tenths = Math.round(tps * 10) / 10
   if (tenths < 10) return tenths.toFixed(1)
   const whole = Math.round(tenths)
-  if (whole < 1_000) return String(whole).padStart(3, " ")
-  return `${Math.round(whole / 1_000)}k`.padStart(3, " ")
+  if (whole < 1_000) return String(whole)
+  return `${Math.round(whole / 1_000)}k`
 }
 
 export type SpeedTone = "success" | "warning" | "error"

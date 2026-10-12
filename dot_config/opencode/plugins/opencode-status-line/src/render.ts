@@ -233,13 +233,14 @@ export interface ContextRunsInput {
 }
 
 /**
- * The context segment: `CONTEXT 57% (572.7k)`, or the plain token count where
- * the model's window is unknown. This checkout drops the context bar — only
- * the figures remain. With no usage yet it draws the same shape at zero —
- * `0%` and `0` — so a fresh session shows its full line from the first paint;
- * the first usage-bearing message replaces the zeros on the next repaint. The
- * reading is the newest request's own record, never the session record's
- * cumulative totals, which sum every turn.
+ * The context segment: `ctx 57% 572.7k`, or the plain token count where the
+ * model's window is unknown. This checkout drops the context bar — only the
+ * figures remain, the percent as a whole number and the count after a space
+ * rather than in parentheses. With no usage yet it draws the same shape at
+ * zero — `0%` and `0` — so a fresh session shows its full line from the first
+ * paint; the first usage-bearing message replaces the zeros on the next
+ * repaint. The reading is the newest request's own record, never the session
+ * record's cumulative totals, which sum every turn.
  */
 export function contextRuns(input: ContextRunsInput): Run[] {
   const used = contextUsed(input.tokens)
@@ -250,26 +251,25 @@ export function contextRuns(input: ContextRunsInput): Run[] {
   return [
     ...prefix,
     { text: `${Math.round(ratio * 100)}%`, tone },
-    muted(" ("),
+    muted(" "),
     muted(compact(used)),
-    muted(")"),
   ]
 }
 
 /**
  * The cache segment: its configured label, the share of the newest request's
- * window read from cache, and the cached token count in parentheses. With no
- * reading yet it draws the same label at zero — `0.0% (0)` — rather than
- * vanishing, so the line keeps its shape until the first usage arrives.
+ * window read from cache as a whole number, and the cached token count after a
+ * space rather than in parentheses. With no reading yet it draws the same
+ * label at zero — `cache 0% 0` — rather than vanishing, so the line keeps its
+ * shape until the first usage arrives.
  */
 export function cacheRuns(tokens: TokenRecord | undefined, label: string): Run[] {
   const share = cacheShare(tokens)
   return [
     muted(`${label} `),
-    muted(`${((share ?? 0) * 100).toFixed(1)}%`),
-    muted(" ("),
+    muted(`${Math.round((share ?? 0) * 100)}%`),
+    muted(" "),
     muted(compact(tokens?.cache?.read ?? 0)),
-    muted(")"),
   ]
 }
 

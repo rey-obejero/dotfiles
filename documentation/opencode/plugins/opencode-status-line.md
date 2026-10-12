@@ -28,18 +28,21 @@ Deployed to `~/.config/opencode/plugins/opencode-status-line`.
 
 | Change | Detail |
 | --- | --- |
-| Words for every reading | `TPS`, `AVG`, `CACHE`, `CONTEXT` — upstream leaves `↯` and `✓` even in `"words"` mode |
+| Lowercase words | `avg`, `cache`, `ctx` for the labelled figures; the sliding reading carries no label |
 | Context bar removed | The context segment shows only the figures |
 | Speed gauge removed | Turned off with `cap.mode: "none"` (no source change) |
-| Parenthesised counts | `82.4% — 63` becomes `82.4% (63)` |
-| Metric unit | `tok/s` becomes `t/s` |
-| Segment order | Shells, Diff, Cost, Speed, Cache, Context, Time |
+| Counts after a space | `82.4% (63)` becomes `82% 63` — whole-number percent, no parentheses |
+| Metric unit | `t/s` becomes `tok/s` |
+| Compact counts | `572.7k` becomes `573k` — whole thousands |
+| Duration | `57m00s` becomes `57m` — minutes drop the seconds field |
+| Minus sign | Deletions draw `−` (U+2212), not a hyphen |
+| Segment order | Shells, Diff, Cost, Cache, Speed, Time, Context |
 | Separator | Middle dot (` · `) between segments |
 
 The line renders as:
 
 ```text
-2 shells · +42 -7 · $0.75 · TPS 261 · AVG 159 t/s · CACHE 99.8% (571.8k) · CONTEXT 57% (572.7k) · 2h07m
+1 shell · +6 −1 · $0.18 · cache 99% 223k · 158 tok/s · avg 88 tok/s · 57m · ctx 26% 262k
 ```
 
 The meter and the segments share the same middle dot, so the line reads as one
@@ -58,30 +61,40 @@ dropped, so nothing here is a nested git repository.
 
 ## Patch detail
 
-Three files differ from upstream.
+The runtime sources differ from upstream in several files.
 
-**`src/rate.ts`** — `USAGE_LABELS.words` becomes real words, and the
-`UsageLabels` interface gains a `context` field:
+**`src/rate.ts`** — `USAGE_LABELS.words` becomes lowercase words, the sliding
+reading loses its label, and the `UsageLabels` interface gains a `context`
+field. `formatRate` drops its three-character space padding, so a two-digit
+figure no longer pushes a second space after its label:
 
 ```ts
 export const USAGE_LABELS: Record<LabelStyle, UsageLabels> = {
-  words: { sliding: "TPS", average: "AVG", settled: "DONE", cache: "CACHE", context: "CONTEXT" },
+  words: { sliding: "", average: "avg", settled: "done", cache: "cache", context: "ctx" },
   icons: { sliding: "↯", average: "μ", settled: "✓", cache: "⧉", context: "" },
 }
 ```
 
 **`src/render.ts`** — `contextRuns` takes a `label`, no longer draws the bar,
-and brackets the count; `cacheRuns` brackets its count too:
+and puts the count after a space; `cacheRuns` does the same, and its percent is
+a whole number:
 
 ```ts
 const prefix = input.label.length > 0 ? [muted(`${input.label} `)] : []
 // ... { text: `${Math.round(ratio * 100)}%`, tone },
-//     muted(" ("), muted(compact(used)), muted(")")
+//     muted(" "), muted(compact(used))
 ```
 
-**`src/tui.tsx`** — passes `label: labels.context` into `contextRuns`, and
-changes ` tok/s` to ` t/s` in both the meter and the `/opencode-status-line`
-stats dialog.
+**`src/format.ts`** — `compact` reports whole thousands (`223k`), and `duration`
+drops the seconds field once there are minutes (`57m`, `2h07m`).
+
+**`src/diff.ts`** — `diffParts` draws the deleted count with a minus sign
+(`−3`, U+2212) rather than a hyphen.
+
+**`src/tui.tsx`** — passes `label: labels.context` into `contextRuns`, builds
+each meter reading as `<label><figure> tok/s` (the label plus a space only when
+it has one), and changes ` t/s` to ` tok/s` in both the meter and the
+`/opencode-status-line` stats dialog.
 
 ## Configuration
 
@@ -92,7 +105,7 @@ stats dialog.
 {
   "surface": "prompt.footer.status",
   "usage": {
-    "segments": ["shells", "diff", "cost", "meter", "cache", "context", "time"],
+    "segments": ["shells", "diff", "cost", "cache", "meter", "time", "context"],
     "labels": "words",
     "separator": " · "
   },
@@ -119,7 +132,7 @@ Because `.git` was removed, there is nothing to `git fetch`. To move to a newer
 upstream version:
 
 1. Clone upstream at the tag you want.
-2. Re-apply the three edits above.
+2. Re-apply the edits above.
 3. Optionally run `bun test` in the fresh clone (before dropping `test/`) to
    check the edits against upstream's suite.
 4. Copy the runtime files over `dot_config/opencode/plugins/opencode-status-line/`.

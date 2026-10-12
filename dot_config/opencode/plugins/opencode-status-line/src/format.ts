@@ -7,10 +7,10 @@
  *   bun test test/format.test.ts
  */
 
-/** `572.7k`, `1.2M` — compact counts with one decimal past a thousand. */
+/** `862`, `223k`, `1.2M` — whole counts under a million, one decimal past it. */
 export function compact(value: number): string {
   if (value < 1_000) return String(Math.round(value))
-  if (value < 1_000_000) return `${(value / 1_000).toFixed(1)}k`
+  if (value < 1_000_000) return `${Math.round(value / 1_000)}k`
   return `${(value / 1_000_000).toFixed(1)}M`
 }
 
@@ -19,12 +19,12 @@ export function money(value: number): string {
   return `$${value.toFixed(2)}`
 }
 
-/** `45s`, `12m04s`, `2h07m` — coarse by design; it is a glance, not a stopwatch. */
+/** `45s`, `57m`, `2h07m` — coarse by design; it is a glance, not a stopwatch. */
 export function duration(ms: number): string {
   const seconds = Math.max(0, Math.floor(ms / 1_000))
   if (seconds < 60) return `${seconds}s`
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m${String(seconds % 60).padStart(2, "0")}s`
+  if (minutes < 60) return `${minutes}m`
   const hours = Math.floor(minutes / 60)
   return `${hours}h${String(minutes % 60).padStart(2, "0")}m`
 }

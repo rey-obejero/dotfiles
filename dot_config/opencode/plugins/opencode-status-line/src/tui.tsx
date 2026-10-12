@@ -677,13 +677,14 @@ export default Plugin.define({
       const runs = gaugeFor(capInput(view, each))
       view.readings.forEach((reading, index) => {
         const lead = index > 0 ? " · " : runs.length > 0 ? " " : ""
+        const label = reading.label.length > 0 ? `${reading.label} ` : ""
         runs.push({
-          text: `${lead}${reading.label} ${formatRate(reading.tps)}`,
+          text: `${lead}${label}${formatRate(reading.tps)}`,
           tone: speedTone(reading.tps, config.fastTps, config.slowTps),
           dim: !reading.live,
         })
+        runs.push(muted(" tok/s"))
       })
-      runs.push(muted(" t/s"))
       return runs
     }
 
@@ -798,10 +799,15 @@ export default Plugin.define({
       })
       return (
         <box flexDirection="column" paddingLeft={2} paddingRight={2} gap={1}>
-          <text>t/s</text>
+          <text>tok/s</text>
           <text>
             {view()
-              ? `${view()!.readings.map((reading) => `${reading.label} ${formatRate(reading.tps)}`).join(" · ")} t/s`
+              ? view()!
+                  .readings.map((reading) => {
+                    const label = reading.label.length > 0 ? `${reading.label} ` : ""
+                    return `${label}${formatRate(reading.tps)} tok/s`
+                  })
+                  .join(" · ")
               : "idle"}
           </text>
           <text>

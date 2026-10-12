@@ -1,7 +1,7 @@
 {
   "surface": "prompt.footer",
   "usage": {
-    "segments": ["shells", "diff", "cost", "meter", "cache", "context", "time"],
+    "segments": ["shells", "diff", "cost", "cache", "meter", "time", "context"],
     "labels": "words",
     "separator": " · "
   },
