@@ -9,9 +9,32 @@ theme:
   dark: dark-github
 setupVersion: 2
 statusLine:
-  preset: full
+  preset: custom
   sessionAccent: true
   transparent: false
+  separator: pipe
+  leftSegments:
+    - vim
+    - model
+    - mode
+    - path
+    - git
+    - session_name
+    - subagents
+    - collab
+    - time_spent
+    - token_in
+    - token_out
+    - token_total
+    - token_rate
+    - cache_hit
+    - cache_read
+    - cost
+    - context_pct
+    - context_total
+    - usage
+  rightSegments:
+    []
 tui:
   tight: false
   vimMode: true
