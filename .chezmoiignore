@@ -1,4 +1,7 @@
-dot_tmux/plugins/**
+# Target paths, not source paths. The tmux plugin checkouts are cloned by TPM,
+# not managed here, so ignore their contents: `.tmux/plugins/**`, not
+# `dot_tmux/plugins/**` (which matches nothing).
+.tmux/plugins/**
 documentation/
 AGENTS.md
 README.md
