@@ -1,0 +1,21 @@
+modelRoles:
+  default: commandcode/deepseek/deepseek-v4.1-flash
+symbolPreset: nerd
+composer:
+  shape: pi
+  tokenRate: true
+theme:
+  light: light-github
+  dark: dark-github
+setupVersion: 2
+statusLine:
+  preset: default
+  sessionAccent: true
+  transparent: false
+tui:
+  tight: false
+  vimMode: true
+  vimModeDisplay: text
+colorBlindMode: false
+hideThinkingBlock: true
+personality: friendly

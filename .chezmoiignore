@@ -2,3 +2,37 @@ dot_tmux/plugins/**
 documentation/
 AGENTS.md
 README.md
+
+# Oh My Pi (OMP) runtime state.
+#
+# Only the config subset under dot_omp/ is tracked: settings (config.yml),
+# plus AGENTS.md, RULES.md, keybindings.yml, models.yml, commands/,
+# skills/, and themes/ if you add them. Everything below is machine-local
+# state, a cache, or a credential store. It must never enter git.
+#
+# Patterns are target paths, not source paths.
+.omp/agent/sessions
+.omp/agent/terminal-sessions
+.omp/agent/cache
+.omp/agent/predict
+.omp/agent/logs
+.omp/agent/managed-skills
+.omp/agent/*.db
+.omp/agent/*.db-wal
+.omp/agent/*.db-shm
+.omp/agent/last-changelog-version
+
+# Credential material. Un-ignore these only if you store them with chezmoi's
+# age encryption (encrypted_ prefix) or a secret manager.
+.omp/agent/secrets.yml
+.omp/agent/secret-placeholder.key
+.omp/agent/auth.json
+.omp/agent/credentials.json
+
+.omp/cache
+.omp/logs
+.omp/run
+.omp/blobs
+.omp/stats.db
+.omp/stats.db-wal
+.omp/stats.db-shm

@@ -7,6 +7,11 @@ typeset -U path
 path=("$HOME/.local/bin" "$HOME/bin" $path)
 export PATH
 
+# Bun global binaries. Oh My Pi (`omp`) installs here via `bun install -g`.
+export BUN_INSTALL="$HOME/.bun"
+path=("$BUN_INSTALL/bin" $path)
+export PATH
+
 export VISUAL=nvim
 export EDITOR="$VISUAL"
 
