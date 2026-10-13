@@ -9,7 +9,7 @@ theme:
   dark: dark-github
 setupVersion: 2
 statusLine:
-  preset: default
+  preset: full
   sessionAccent: true
   transparent: false
 tui:
@@ -19,3 +19,11 @@ tui:
 colorBlindMode: false
 hideThinkingBlock: true
 personality: friendly
+tools:
+  approvalMode: write
+display:
+  showTokenUsage: true
+secrets:
+  enabled: true
+compaction:
+  thresholdPercent: 70
