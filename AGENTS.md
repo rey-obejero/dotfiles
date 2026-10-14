@@ -29,13 +29,15 @@ configuration subset lives in source state, and `.chezmoiignore` guards the rest
 
 Tracked:
 
-| Target                    | Source                                     |
-| ------------------------- | ------------------------------------------ |
-| `~/.omp/agent/config.yml` | `dot_omp/private_agent/private_config.yml` |
-| `~/.omp/agent/themes/`    | `dot_omp/private_agent/private_themes/`    |
+| Target                     | Source                                      |
+| -------------------------- | ------------------------------------------- |
+| `~/.omp/agent/config.yml`  | `dot_omp/private_agent/private_config.yml`  |
+| `~/.omp/agent/models.yml`  | `dot_omp/private_agent/private_models.yml`  |
+| `~/.omp/agent/extensions/` | `dot_omp/private_agent/private_extensions/` |
+| `~/.omp/agent/themes/`     | `dot_omp/private_agent/private_themes/`     |
 
 Candidates to track once they exist, added the same way: `~/.omp/agent/AGENTS.md`,
-`RULES.md`, `keybindings.yml`, `models.yml`, `commands/`, and `skills/`.
+`RULES.md`, `keybindings.yml`, `commands/`, and `skills/`.
 
 ### config.yml is a live file
 
