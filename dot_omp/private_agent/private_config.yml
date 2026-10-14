@@ -5,11 +5,11 @@ composer:
   shape: pi
   tokenRate: true
 theme:
-  light: light-github-base16
-  dark: light-github-base16
+  light: github-base16
+  dark: github-base16
 setupVersion: 2
 statusLine:
-  preset: default
+  preset: compact
   sessionAccent: true
   transparent: false
   separator: none
@@ -18,7 +18,7 @@ tui:
   vimMode: true
   vimModeDisplay: text
 colorBlindMode: false
-hideThinkingBlock: true
+hideThinkingBlock: false
 personality: friendly
 tools:
   approvalMode: write
