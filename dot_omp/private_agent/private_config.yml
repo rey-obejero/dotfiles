@@ -5,8 +5,8 @@ composer:
   shape: pi
   tokenRate: true
 theme:
-  light: light-github
-  dark: dark-github
+  light: light-github-base16
+  dark: dark
 setupVersion: 2
 statusLine:
   preset: default

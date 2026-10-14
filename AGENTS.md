@@ -32,9 +32,10 @@ Tracked:
 | Target                    | Source                                     |
 | ------------------------- | ------------------------------------------ |
 | `~/.omp/agent/config.yml` | `dot_omp/private_agent/private_config.yml` |
+| `~/.omp/agent/themes/`    | `dot_omp/private_agent/private_themes/`    |
 
 Candidates to track once they exist, added the same way: `~/.omp/agent/AGENTS.md`,
-`RULES.md`, `keybindings.yml`, `models.yml`, `commands/`, `skills/`, and `themes/`.
+`RULES.md`, `keybindings.yml`, `models.yml`, `commands/`, and `skills/`.
 
 ### config.yml is a live file
 
