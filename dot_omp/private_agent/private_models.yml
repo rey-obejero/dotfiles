@@ -1,0 +1,13 @@
+# Why: Command Code moved `z-ai/glm-5.3-flash` off its Responses endpoint.
+# /provider/v1/models now advertises only /chat/completions for that id
+# (verified 2026-10-15; `z-ai/glm-5.3-flashx` and `zai-org/GLM-5.*` still list
+# /responses). omp 18.10.4's bundled route table (pi-catalog behavior.kdl,
+# `api-routes provider="commandcode"`) still sends it to /responses, which
+# answers with 400 "not available on this endpoint".
+# Remove this override once the bundled catalog drops the id from the
+# openai-responses route list.
+providers:
+  commandcode:
+    modelOverrides:
+      z-ai/glm-5.3-flash:
+        api: openai-completions
