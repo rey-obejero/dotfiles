@@ -6,7 +6,7 @@ composer:
   tokenRate: true
 theme:
   light: light-github-base16
-  dark: dark
+  dark: light-github-base16
 setupVersion: 2
 statusLine:
   preset: default
