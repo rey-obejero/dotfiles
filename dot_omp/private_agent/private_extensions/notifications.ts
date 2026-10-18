@@ -22,7 +22,6 @@ import { splitCardTitle } from "@oh-my-pi/pi-coding-agent/utils/title-card";
 import { isOsc99Supported, TERMINAL } from "@oh-my-pi/pi-tui";
 
 const DASH = "–";
-const JOIN = "·";
 let retrying = false;
 
 function context(ctx: {
@@ -43,7 +42,7 @@ function notify(status: string, body: string, type: string): void {
 		return;
 	}
 
-	TERMINAL.sendNotification({ body: `omp ${DASH} ${status} ${JOIN} ${body}`, type, actions: "focus" });
+	TERMINAL.sendNotification({ body: `omp ${DASH} ${status} ${DASH} ${body}`, type, actions: "focus" });
 }
 
 export default function notifications(pi: ExtensionAPI): void {
