@@ -15,6 +15,18 @@ opencode_model = "{{ promptStringOnce . "opencode_model" "Default OpenCode model
 opencode_model_plan = "{{ promptStringOnce . "opencode_model_plan" "Model for the plan agent? (empty = default)" "" }}"
 opencode_model_build = "{{ promptStringOnce . "opencode_model_build" "Model for the build agent? (empty = default)" "" }}"
 
+# Default OMP model for normal turns.
+omp_model_default = "{{ promptStringOnce . "omp_model_default" "Default OMP model (full selector)?" "commandcode/deepseek/deepseek-v4.1-flash:low" }}"
+
+# Slow/plan model.
+omp_model_slow = "{{ promptStringOnce . "omp_model_slow" "Slow/plan OMP model (full selector)?" "commandcode/deepseek/deepseek-v4.1-flash:high" }}"
+
+# Reserve/advisor model.
+omp_model_premium = "{{ promptStringOnce . "omp_model_premium" "Premium OMP model for reserve/advisor (full selector)?" "commandcode/deepseek/deepseek-v4.1-flash-fast:high" }}"
+
+# Fallback model.
+omp_model_fallback = "{{ promptStringOnce . "omp_model_fallback" "Fallback OMP model (full selector)?" "commandcode/z-ai/glm-5.3-flash" }}"
+
 # --- Eclipse JDT Language Server ---
 {{ $jdtls_auto := promptBoolOnce . "jdtls_auto" "Install `jdtls` automatically to ~/.local/share/jdtls/current? [Y/n] " true -}}
 {{- if $jdtls_auto }}

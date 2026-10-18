@@ -1,0 +1,67 @@
+modelRoles:
+  default: "{{ .omp_model_default }}"
+  slow: "{{ .omp_model_slow }}"
+  plan: "@slow"
+  reserve: "{{ .omp_model_premium }}"
+  advisor: "{{ .omp_model_premium }}"
+cycleOrder:
+  - default
+  - slow
+  - reserve
+prewalk:
+  enabled: true
+advisor:
+  enabled: false
+title:
+  icons: nf+emoji
+completion:
+  notify: off
+error:
+  notify: off
+ask:
+  notify: off
+memory:
+  backend: mnemopi
+retry:
+  fallbackChains:
+    default:
+      - "{{ .omp_model_premium }}"
+      - "{{ .omp_model_fallback }}"
+    slow:
+      - "{{ .omp_model_premium }}"
+      - "{{ .omp_model_fallback }}"
+    plan:
+      - "{{ .omp_model_premium }}"
+      - "{{ .omp_model_fallback }}"
+    reserve:
+      - "{{ .omp_model_fallback }}"
+    advisor:
+      - "{{ .omp_model_fallback }}"
+symbolPreset: nerd
+composer:
+  shape: pi
+  tokenRate: true
+theme:
+  light: github-base16
+  dark: github-base16
+setupVersion: 2
+statusLine:
+  preset: compact
+  sessionAccent: true
+  transparent: false
+  separator: none
+tui:
+  tight: false
+  vimMode: true
+  vimModeDisplay: text
+colorBlindMode: false
+hideThinkingBlock: false
+personality: friendly
+tools:
+  approvalMode: write
+display:
+  showTokenUsage: true
+secrets:
+  enabled: true
+compaction:
+  thresholdPercent: 70

@@ -17,7 +17,7 @@ Instead:
 ## Common source paths
 
 - OpenCode config: `dot_config/opencode/opencode.jsonc.tmpl`
-- Oh My Pi settings: `dot_omp/private_agent/private_config.yml`
+- Oh My Pi settings: `dot_omp/private_agent/private_config.yml.tmpl` (chezmoi template)
 - zsh: `dot_zshrc`
 - tmux: `dot_tmux.conf`, `dot_tmux/`
 - wezterm: `executable_dot_wezterm.lua`
@@ -31,7 +31,7 @@ Tracked:
 
 | Target                     | Source                                      |
 | -------------------------- | ------------------------------------------- |
-| `~/.omp/agent/config.yml`  | `dot_omp/private_agent/private_config.yml`  |
+| `~/.omp/agent/config.yml`  | `dot_omp/private_agent/private_config.yml.tmpl` |
 | `~/.omp/agent/models.yml`  | `dot_omp/private_agent/private_models.yml`  |
 | `~/.omp/agent/extensions/` | `dot_omp/private_agent/private_extensions/` |
 | `~/.omp/agent/themes/`     | `dot_omp/private_agent/private_themes/`     |

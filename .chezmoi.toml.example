@@ -11,6 +11,10 @@
 #   - opencode_model_general-> optional override for the general agent
 #   - opencode_model_explore-> optional override for the explore agent
 #   - opencode_model_scout  -> optional override for the scout agent
+#   - omp_model_default     -> default OMP model for normal turns
+#   - omp_model_slow        -> slow/plan OMP model
+#   - omp_model_premium     -> reserve/advisor OMP model
+#   - omp_model_fallback    -> fallback OMP model
 #   - jdtls_path            -> absolute path to your eclipse.jdt.ls clone
 
 [data]
@@ -21,6 +25,13 @@ opencode_model = "opencode/deepseek-v4-flash-free"
 # opencode_model_general = "opencode/deepseek-v4-flash-free"
 # opencode_model_explore = "opencode/deepseek-v4-flash-free"
 # opencode_model_scout = "opencode/deepseek-v4-flash-free"
+
+# OMP model selectors. Each value is a full selector; append `:thinking`
+# (off|minimal|low|medium|high|xhigh|max|auto) to pin the thinking level.
+omp_model_default = "commandcode/deepseek/deepseek-v4.1-flash:low"
+omp_model_slow = "commandcode/deepseek/deepseek-v4.1-flash:high"
+omp_model_premium = "commandcode/deepseek/deepseek-v4.1-flash-fast:high"
+omp_model_fallback = "commandcode/z-ai/glm-5.3-flash"
 
 # No default is assumed. Point this at wherever you cloned eclipse.jdt.ls.
 jdtls_path = "/home/youruser/Software/Source/github.com/eclipse-jdtls/eclipse.jdt.ls"
