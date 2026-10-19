@@ -20,6 +20,7 @@ README.md
 .omp/agent/predict
 .omp/agent/logs
 .omp/agent/managed-skills
+.omp/agent/zdr-state.json
 .omp/agent/*.db
 .omp/agent/*.db-wal
 .omp/agent/*.db-shm
