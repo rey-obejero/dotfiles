@@ -3,18 +3,18 @@
  *
  * Text copied inside WSL lands on the Windows clipboard through a small
  * polling loop, and text copied on Windows can be pulled into the composer
- * with `/clip paste` or `Alt+Shift+U`.
+ * with `/clipboard paste` or `Alt+Shift+U`.
  *
  * The forward direction polls the Wayland clipboard instead of using
  * `wl-paste --watch`, whose lifetime depends on the compositor. A 700 ms poll
  * is cheap, survives compositor restarts, and skips values already forwarded,
  * so WSLg's own host→guest mirror cannot bounce content back.
  *
- * Commands:
- *   /clip              show bridge status
- *   /clip on|off       start or stop the WSL → Windows watcher
- *   /clip copy         copy the current composer draft to Windows
- *   /clip paste        paste the Windows clipboard into the composer
+ * Vim mode note: `p` puts the editor's internal register, not the system
+ * clipboard, so it cannot paste something copied in Windows. Plain `p` also
+ * cannot be rebound to the system clipboard without breaking typing. Use
+ * `/clipboard paste` or `Alt+Shift+U` for the Windows clipboard; `y`/`p`
+ * still round-trip OMP's own selections.
  *
  * `OMP_WSL_CLIP=0` disables the automatic watcher at session start.
  */
@@ -130,8 +130,25 @@ async function pasteHost(ctx: ExtensionContext): Promise<string> {
 	if (!ctx.hasUI) return "The composer is not available in this mode.";
 	const text = await hostRead();
 	if (!text) return "The Windows clipboard has no text.";
+
+	const before = ctx.ui.getEditorText();
 	ctx.ui.pasteToEditor(text);
+	// Vim Normal mode can leave pasteToEditor a no-op; append instead of losing the paste.
+	if (ctx.ui.getEditorText() === before) ctx.ui.setEditorText(before + text);
 	return `Pasted ${text.length} character(s) from the Windows clipboard.`;
+}
+
+function argumentCompletions(prefix: string) {
+	const options = [
+		{ value: "status", label: "status", description: "Show the bridge and watcher state" },
+		{ value: "on", label: "on", description: "Start WSL → Windows text sync" },
+		{ value: "off", label: "off", description: "Stop the sync" },
+		{ value: "copy", label: "copy", description: "Copy the composer draft to Windows" },
+		{ value: "paste", label: "paste", description: "Paste the Windows clipboard into the composer" },
+	];
+	const query = prefix.trim().toLowerCase();
+	const matches = options.filter(option => option.value.startsWith(query));
+	return matches.length > 0 ? matches : null;
 }
 
 export default function wslClipboard(pi: ExtensionAPI): void {
@@ -146,10 +163,11 @@ export default function wslClipboard(pi: ExtensionAPI): void {
 		if (ctx.agent.kind === "main") stopWatcher();
 	});
 
-	pi.registerCommand("clip", {
+	pi.registerCommand("clipboard", {
 		description: "WSL ↔ Windows clipboard bridge",
+		getArgumentCompletions: argumentCompletions,
 		handler: async (args, ctx) => {
-			const argument = (args ?? "").trim().toLowerCase();
+			const argument = args.trim().toLowerCase();
 			switch (argument) {
 				case "":
 				case "status":
@@ -168,7 +186,7 @@ export default function wslClipboard(pi: ExtensionAPI): void {
 					ctx.ui.notify(await pasteHost(ctx), "info");
 					return;
 				default:
-					ctx.ui.notify("Usage: /clip [status|on|off|copy|paste]", "warning");
+					ctx.ui.notify("Usage: /clipboard [status|on|off|copy|paste]", "warning");
 			}
 		},
 	});

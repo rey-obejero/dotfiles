@@ -2,59 +2,87 @@
  * Command Code ZDR toggle
  *
  * Command Code's Provider API enforces zero data retention per request with
- * `x-cmd-zdr: 1`. When enabled, every outgoing request to a Command Code host
- * gets that header; when disabled, requests are left untouched.
+ * `x-cmd-zdr: 1`. The header is injected at the `fetch` layer so it also
+ * covers subagents, title generation, compaction, cache warming, and usage
+ * probes, not just the active chat model.
  *
- * The header is injected at the `fetch` layer instead of through provider
- * configuration so it also covers subagents, title generation, compaction,
- * cache warming, usage probes, and any other request path that bypasses the
- * active chat model.
- *
- * Toggle with `/zdr on|off|toggle|status` or `Alt+Shift+Z`. The choice is
- * persisted in `zdr-state.json` next to the agent config. `CMD_ZDR=1` or
- * `CMD_ZDR=0` overrides the persisted value for one process.
+ * State is per session: `CMD_ZDR=1` seeds a new session as enabled and an
+ * unset/`0` value seeds it disabled. `/commandcode-zdr` overrides that choice
+ * for the current session only; nothing is written to disk. Subagent requests
+ * inherit the root session's choice.
  *
  * ZDR is not free: a model with no ZDR-capable upstream fails with HTTP 422
  * (`cmd_zdr_no_providers`) rather than falling back, and routing may change
- * cost. `OMP_ZDR_HOSTS` overrides the host match list for gateways.
+ * cost.
  */
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { homedir } from "node:os";
-import { join } from "node:path";
 
 const HEADER = "x-cmd-zdr";
-const DEFAULT_HOSTS = "commandcode.ai";
+const HOST = "commandcode.ai";
 const WRAPPER = Symbol.for("omp.commandcode-zdr.fetch");
-const AGENT_DIR = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".omp", "agent");
-const STATE_FILE = join(AGENT_DIR, "zdr-state.json");
 
-const state = { enabled: false };
-const ZDR_HOSTS = (process.env.OMP_ZDR_HOSTS ?? DEFAULT_HOSTS)
-	.split(",")
-	.map(value => value.trim())
-	.filter(Boolean);
+interface ZdrState {
+	enabled: boolean;
+	source: "env" | "command";
+}
 
-function describe(enabled: boolean): string {
-	if (!enabled) return "ZDR OFF — Command Code requests are not tagged.";
-	return `ZDR ON — Command Code requests carry ${HEADER}: 1. Models without a ZDR upstream fail with 422 (cmd_zdr_no_providers).`;
+const bySession = new Map<string, ZdrState>();
+const sessionByAgent = new Map<string, string>();
+const parentByAgent = new Map<string, string | undefined>();
+let activeSessionId: string | undefined;
+
+function stateFor(sessionId: string): ZdrState {
+	let state = bySession.get(sessionId);
+	if (!state) {
+		state = { enabled: process.env.CMD_ZDR === "1", source: "env" };
+		bySession.set(sessionId, state);
+	}
+	return state;
+}
+
+function rootSessionId(ctx: ExtensionContext): string {
+	const own = ctx.sessionManager.getSessionId();
+	sessionByAgent.set(ctx.agent.id, own);
+	parentByAgent.set(ctx.agent.id, ctx.agent.parentId);
+
+	let sessionId = own;
+	let agentId = ctx.agent.id;
+	const seen = new Set<string>();
+	while (true) {
+		const parent = parentByAgent.get(agentId);
+		if (!parent || seen.has(parent)) break;
+		seen.add(parent);
+		const parentSession = sessionByAgent.get(parent);
+		if (!parentSession) break;
+		sessionId = parentSession;
+		agentId = parent;
+	}
+	return sessionId;
+}
+
+function activate(ctx: ExtensionContext): ZdrState {
+	activeSessionId = rootSessionId(ctx);
+	return stateFor(activeSessionId);
+}
+
+function describe(state: ZdrState): string {
+	const origin =
+		state.source === "env" ? `seeded by CMD_ZDR=${process.env.CMD_ZDR ?? "unset"}` : "set in this session";
+	return `ZDR ${state.enabled ? "ON" : "OFF"} (${origin}).`;
 }
 
 function installFetchWrapper(): void {
-	const global = globalThis as typeof globalThis & {
-		[WRAPPER]?: { state: typeof state };
-	};
-	if (global[WRAPPER]) {
-		global[WRAPPER].state = state;
-		return;
-	}
+	const root = globalThis as typeof globalThis & { [WRAPPER]?: true };
+	if (root[WRAPPER]) return;
 
 	const original = globalThis.fetch;
 	const wrapper = ((input: RequestInfo | URL, init?: RequestInit) => {
-		if (!state.enabled) return original(input, init);
+		const state = activeSessionId ? bySession.get(activeSessionId) : undefined;
+		const enabled = state ? state.enabled : process.env.CMD_ZDR === "1";
+		if (!enabled) return original(input, init);
 
-		const url =
-			typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-		if (!ZDR_HOSTS.some(host => url.includes(host))) return original(input, init);
+		const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+		if (!url.includes(HOST)) return original(input, init);
 
 		const baseHeaders = init?.headers ?? (input instanceof Request ? input.headers : undefined);
 		const headers = new Headers(baseHeaders);
@@ -62,65 +90,84 @@ function installFetchWrapper(): void {
 		return original(input, { ...(init ?? {}), headers });
 	}) as typeof fetch;
 
-	(wrapper as unknown as Record<symbol, unknown>)[WRAPPER] = { state };
+	(wrapper as unknown as Record<symbol, unknown>)[WRAPPER] = true;
 	globalThis.fetch = wrapper;
 }
 
-async function loadState(): Promise<void> {
-	try {
-		const saved = (await Bun.file(STATE_FILE).json()) as { enabled?: unknown };
-		if (typeof saved.enabled === "boolean") state.enabled = saved.enabled;
-	} catch {
-		// No saved state yet.
-	}
-	if (process.env.CMD_ZDR === "1") state.enabled = true;
-	else if (process.env.CMD_ZDR === "0") state.enabled = false;
+function argumentCompletions(prefix: string) {
+	const options = [
+		{ value: "status", label: "status", description: "Show this session's ZDR state" },
+		{ value: "on", label: "on", description: "Enforce ZDR for this session" },
+		{ value: "off", label: "off", description: "Send Command Code requests untagged this session" },
+	];
+	const query = prefix.trim().toLowerCase();
+	const matches = options.filter(option => option.value.startsWith(query));
+	return matches.length > 0 ? matches : null;
 }
 
-async function persistState(): Promise<void> {
-	try {
-		await Bun.write(STATE_FILE, `${JSON.stringify({ enabled: state.enabled }, null, 2)}\n`);
-	} catch {
-		// The toggle still applies to this process when the state cannot be saved.
-	}
-}
-
-export default async function commandcodeZdr(pi: ExtensionAPI): Promise<void> {
-	await loadState();
+export default function commandcodeZdr(pi: ExtensionAPI): void {
 	installFetchWrapper();
 
-	const setEnabled = async (enabled: boolean, ctx?: ExtensionContext): Promise<void> => {
-		state.enabled = enabled;
-		await persistState();
-		ctx?.ui.notify(describe(enabled), enabled ? "warning" : "info");
-	};
+	pi.on("session_start", (_event, ctx) => {
+		activate(ctx);
+	});
+	pi.on("session_switch", (_event, ctx) => {
+		activate(ctx);
+	});
+	pi.on("session_branch", (_event, ctx) => {
+		activate(ctx);
+	});
+	pi.on("session_tree", (_event, ctx) => {
+		activate(ctx);
+	});
+	pi.on("session_shutdown", (_event, ctx) => {
+		sessionByAgent.delete(ctx.agent.id);
+		parentByAgent.delete(ctx.agent.id);
+		if (ctx.agent.kind === "main") {
+			bySession.delete(ctx.sessionManager.getSessionId());
+			activeSessionId = undefined;
+		}
+	});
 
-	pi.registerCommand("zdr", {
+	pi.registerCommand("commandcode-zdr", {
 		description: "Toggle strict ZDR headers on Command Code requests",
+		getArgumentCompletions: argumentCompletions,
 		handler: async (args, ctx) => {
-			const argument = (args ?? "").trim().toLowerCase();
+			const state = activate(ctx);
+			const argument = args.trim().toLowerCase();
 			switch (argument) {
+				case "":
+				case "toggle":
+					state.enabled = !state.enabled;
+					state.source = "command";
+					ctx.ui.notify(describe(state), state.enabled ? "warning" : "info");
+					return;
 				case "on":
-					await setEnabled(true, ctx);
+					state.enabled = true;
+					state.source = "command";
+					ctx.ui.notify(describe(state), "warning");
 					return;
 				case "off":
-					await setEnabled(false, ctx);
+					state.enabled = false;
+					state.source = "command";
+					ctx.ui.notify(describe(state), "info");
 					return;
-				case "toggle":
-					await setEnabled(!state.enabled, ctx);
-					return;
-				case "":
 				case "status":
-					ctx.ui.notify(describe(state.enabled), "info");
+					ctx.ui.notify(describe(state), "info");
 					return;
 				default:
-					ctx.ui.notify("Usage: /zdr [on|off|status|toggle]", "warning");
+					ctx.ui.notify("Usage: /commandcode-zdr [on|off|status]", "warning");
 			}
 		},
 	});
 
 	pi.registerShortcut("alt+shift+z", {
-		description: "Toggle Command Code ZDR",
-		handler: async ctx => setEnabled(!state.enabled, ctx),
+		description: "Toggle this session's Command Code ZDR",
+		handler: async ctx => {
+			const state = activate(ctx);
+			state.enabled = !state.enabled;
+			state.source = "command";
+			ctx.ui.notify(describe(state), state.enabled ? "warning" : "info");
+		},
 	});
 }
