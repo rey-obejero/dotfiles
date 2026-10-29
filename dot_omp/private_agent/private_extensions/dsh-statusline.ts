@@ -1,15 +1,14 @@
 /**
  * DSH-style status footer
  *
- * Reimplements dsh-TUI's footer as an OMP widget placed below the editor. The
- * native status line is emptied in config (`statusLine.preset: custom`, both
- * segment lists `[]`) so this widget owns the footer row.
+ * Mirrors dsh-TUI's default compact status line:
+ *   `NORMAL · model · effort · cache · cost · folder` + right-aligned `ctx`
  *
- * Layout: one row of `NORMAL · model · tps · ● agents · effort · cache ·
- * tokens · cost · path`, with `git · #pr · session · #id · ctx` right-aligned.
+ * The native status line is emptied in config (`statusLine.preset: custom`,
+ * both segment lists `[]`) so this widget owns the footer row.
  *
- * dsh's segmented context bar and its hover row are omitted: the bar would
- * need a second row, and widgets receive no mouse targets.
+ * dsh's segmented context bar is intentionally omitted: it needs a full row of
+ * its own, and this footer is deliberately one line.
  *
  * Vim mode has no public extension source and is handled read-only: the
  * editor's `vimMode`/`vimPending`/`vimSelectedLines`/`vimEnabled` getters are
@@ -17,7 +16,6 @@
  * If the getters move, the label is omitted.
  */
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import type { SessionMessageEntry } from "@oh-my-pi/pi-coding-agent/session/session-entries";
 import { CustomEditor } from "@oh-my-pi/pi-tui/prompt/custom-editor";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -42,24 +40,14 @@ export interface FooterSnapshot {
 	vim?: VimSnapshot;
 	model?: string;
 	effort?: string;
-	tps?: number;
-	subagents: number;
 	cacheRate?: string;
-	tokensIn: number;
-	tokensOut: number;
 	cost?: number;
 	costPeriod?: "peak" | "idle";
 	path: string;
-	git?: string;
-	pr?: number;
-	sessionName?: string;
-	sessionId?: string;
 	context?: { used: number; window: number; percent: number };
 }
 
 const vim: VimSnapshot = { enabled: false, mode: "insert", pending: "", selectedLines: 0 };
-let gitBranch: string | undefined;
-let prNumber: number | undefined;
 let hostUi: { requestRender?(): void } | undefined;
 let currentCtx: ExtensionContext | undefined;
 let registered = false;
@@ -158,7 +146,7 @@ function padTo(text: string, width: number): string {
 	return current >= width ? text : text + " ".repeat(width - current);
 }
 
-// ── rows ──────────────────────────────────────────────────────────────────
+// ── row ──────────────────────────────────────────────────────────────────
 
 const VIM_LABELS = {
 	insert: ["INSERT", "success"],
@@ -177,7 +165,7 @@ function joinParts(parts: readonly Part[], theme: FgTheme): string {
 	return parts.map(part => part.text).join(theme.fg("muted", SEP));
 }
 
-/** The field row: metrics left, provenance and ctx right-aligned. */
+/** The footer row: default metrics left, context right-aligned. */
 export function renderFields(snapshot: FooterSnapshot, width: number, theme: FgTheme): string {
 	const left: Part[] = [];
 	const right: Part[] = [];
@@ -192,17 +180,9 @@ export function renderFields(snapshot: FooterSnapshot, width: number, theme: FgT
 		left.push({ key: "vim", text: `${theme.fg(color, `${label}${selected}`)}${pending}` });
 	}
 	if (snapshot.model) left.push({ key: "model", text: theme.fg("text", snapshot.model) });
-	if (snapshot.tps !== undefined) left.push({ key: "tps", text: theme.fg("text", `${Math.round(snapshot.tps)} tps`) });
-	if (snapshot.subagents > 0) left.push({ key: "subagents", text: theme.fg("text", `● ${snapshot.subagents}`) });
 	if (snapshot.effort) left.push({ key: "effort", text: muted(snapshot.effort) });
 	if (snapshot.cacheRate !== undefined) {
 		left.push({ key: "cache", text: `${muted("cache ")}${theme.fg("text", snapshot.cacheRate)}` });
-	}
-	if (snapshot.tokensIn > 0 || snapshot.tokensOut > 0) {
-		left.push({
-			key: "tokens",
-			text: theme.fg("text", `${formatTokens(snapshot.tokensIn)}→${formatTokens(snapshot.tokensOut)}`),
-		});
 	}
 	if (snapshot.cost !== undefined && snapshot.cost > 0) {
 		const period = snapshot.costPeriod ? ` ${snapshot.costPeriod}` : "";
@@ -210,12 +190,6 @@ export function renderFields(snapshot: FooterSnapshot, width: number, theme: FgT
 	}
 	if (snapshot.path) left.push({ key: "path", text: muted(snapshot.path) });
 
-	if (snapshot.git) right.push({ key: "git", text: theme.fg("accent", snapshot.git) });
-	if (snapshot.pr !== undefined) right.push({ key: "pr", text: theme.fg("accent", `#${snapshot.pr}`) });
-	if (snapshot.sessionName) right.push({ key: "sessionName", text: theme.fg("accent", snapshot.sessionName) });
-	if (snapshot.sessionId) {
-		right.push({ key: "sessionId", text: muted(`#${snapshot.sessionId.slice(0, 8)}`) });
-	}
 	if (snapshot.context) {
 		const { used, window, percent } = snapshot.context;
 		const color: StatusColor = percent >= 95 ? "error" : percent >= 80 ? "warning" : "muted";
@@ -225,7 +199,6 @@ export function renderFields(snapshot: FooterSnapshot, width: number, theme: FgT
 		});
 	}
 
-	// Drop the least useful right fields first, but never ctx.
 	const fits = (): { leftText: string; rightText: string; leftWidth: number; rightWidth: number; ok: boolean } => {
 		const leftText = joinParts(left, theme);
 		const rightText = joinParts(right, theme);
@@ -236,28 +209,20 @@ export function renderFields(snapshot: FooterSnapshot, width: number, theme: FgT
 	};
 
 	let state = fits();
-	for (const key of ["sessionId", "pr", "sessionName", "git"]) {
-		if (state.ok) break;
-		const index = right.findIndex(part => part.key === key);
-		if (index >= 0) {
-			right.splice(index, 1);
-			state = fits();
-		}
-	}
 
-	// Shrink the path before dropping metrics.
+	// Shrink the folder before dropping metrics.
 	if (!state.ok) {
 		const pathPart = left.find(part => part.key === "path");
 		if (pathPart) {
 			const excess = state.leftWidth + state.rightWidth + 1 - width;
-			const target = Math.max(8, visibleWidth(pathPart.text) - excess);
+			const target = Math.max(6, visibleWidth(pathPart.text) - excess);
 			pathPart.text = padTo(truncate(pathPart.text, target), target);
 			state = fits();
 		}
 	}
 
-	// Then drop left metrics, keeping vim, model and path.
-	for (const key of ["subagents", "tps", "tokens", "cost", "cache", "effort"]) {
+	// Then drop the optional metrics, keeping vim and model.
+	for (const key of ["cost", "cache", "effort"]) {
 		if (state.ok) break;
 		const index = left.findIndex(part => part.key === key);
 		if (index >= 0) {
@@ -281,29 +246,6 @@ export function renderFooter(snapshot: FooterSnapshot, width: number, theme: FgT
 
 // ── live data ─────────────────────────────────────────────────────────────
 
-/** Same arithmetic as OMP's status line: last assistant output over its run. */
-function lastTokensPerSecond(ctx: ExtensionContext): number | undefined {
-	const entries = ctx.sessionManager.getEntries();
-	for (let i = entries.length - 1; i >= 0; i--) {
-		const entry = entries[i];
-		if (entry?.type !== "message") continue;
-		const message: SessionMessageEntry["message"] = entry.message;
-		if (message.role !== "assistant") continue;
-		const output = message.usage.output;
-		if (!(output > 0)) return undefined;
-		const duration =
-			typeof message.duration === "number" && message.duration > 0
-				? message.duration
-				: !ctx.isIdle()
-					? Date.now() - message.timestamp
-					: undefined;
-		if (duration === undefined || duration < 100) return undefined;
-		const rate = (output * 1000) / duration;
-		return Number.isFinite(rate) && rate > 0 ? rate : undefined;
-	}
-	return undefined;
-}
-
 function pricingPeriod(cost: ModelCost | undefined, now = Date.now()): "peak" | "idle" | undefined {
 	const schedule = cost?.timeBased;
 	if (!schedule) return undefined;
@@ -319,12 +261,10 @@ function pricingPeriod(cost: ModelCost | undefined, now = Date.now()): "peak" | 
 	return "idle";
 }
 
+/** dsh's compact cwd: the folder name only. */
 function formatPath(cwd: string): string {
-	const home = process.env.HOME;
-	const path = home && cwd.startsWith(home) ? `~${cwd.slice(home.length)}` : cwd;
-	if (visibleWidth(path) <= 34) return path;
-	const chars = Array.from(path);
-	return `…${chars.slice(-33).join("")}`;
+	const parts = cwd.split(/[\\/]/).filter(Boolean);
+	return parts.length > 0 ? parts[parts.length - 1]! : cwd;
 }
 
 function buildSnapshot(pi: ExtensionAPI, ctx: ExtensionContext): FooterSnapshot {
@@ -335,18 +275,10 @@ function buildSnapshot(pi: ExtensionAPI, ctx: ExtensionContext): FooterSnapshot 
 		vim: vim.enabled ? { ...vim } : undefined,
 		model: ctx.model?.name ?? ctx.model?.id,
 		effort: pi.getThinkingLevel(),
-		tps: lastTokensPerSecond(ctx),
-		subagents: ctx.getAsyncJobSnapshot()?.running.filter(job => job.type === "task").length ?? 0,
 		cacheRate: cacheTotal > 0 ? `${((usage.cacheRead / cacheTotal) * 100).toFixed(1)}%` : undefined,
-		tokensIn: usage.input,
-		tokensOut: usage.output,
 		cost: typeof usage.cost === "number" ? usage.cost : undefined,
 		costPeriod: pricingPeriod(ctx.model?.cost),
 		path: formatPath(ctx.cwd),
-		git: gitBranch,
-		pr: prNumber,
-		sessionName: ctx.sessionManager.getSessionName(),
-		sessionId: ctx.sessionManager.getSessionId(),
 		context: contextUsage
 			? {
 					used: contextUsage.tokens,
@@ -412,47 +344,6 @@ function installVimProbe(ctx: ExtensionContext): void {
 	patchedEditors.add(prototype);
 }
 
-// ── git / PR ──────────────────────────────────────────────────────────────
-
-let vcsAt = 0;
-let vcsCwd = "";
-let prAt = 0;
-let prKey = "";
-
-function refreshVcs(pi: ExtensionAPI, ctx: ExtensionContext): void {
-	const now = Date.now();
-	if (now - vcsAt < 3000 && vcsCwd === ctx.cwd) return;
-	vcsAt = now;
-	vcsCwd = ctx.cwd;
-	prNumber = undefined;
-	void pi
-		.exec("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: ctx.cwd, timeout: 1000 })
-		.then(result => {
-			gitBranch = result.code === 0 ? result.stdout.trim() || undefined : undefined;
-			hostUi?.requestRender?.();
-			const key = `${ctx.cwd}:${gitBranch ?? ""}`;
-			if (!gitBranch || (now - prAt < 60_000 && prKey === key)) return;
-			prAt = Date.now();
-			prKey = key;
-			void pi
-				.exec("gh", ["pr", "view", "--json", "number", "--jq", ".number"], {
-					cwd: ctx.cwd,
-					timeout: 1500,
-				})
-				.then(result => {
-					const parsed = Number.parseInt(result.stdout.trim(), 10);
-					prNumber = result.code === 0 && Number.isFinite(parsed) ? parsed : undefined;
-					hostUi?.requestRender?.();
-				})
-				.catch(() => {
-					prNumber = undefined;
-				});
-		})
-		.catch(() => {
-			gitBranch = undefined;
-		});
-}
-
 // ── extension ─────────────────────────────────────────────────────────────
 
 function renderHost(ui: unknown): { requestRender?(): void } | undefined {
@@ -472,7 +363,6 @@ function ensure(pi: ExtensionAPI, ctx: ExtensionContext): void {
 		WIDGET_KEY,
 		(widgetUi, theme) => {
 			hostUi = renderHost(widgetUi);
-			refreshVcs(pi, ctx);
 			return {
 				render: (width: number): readonly string[] => renderFooter(buildSnapshot(pi, currentCtx!), width, theme),
 			};
@@ -484,12 +374,5 @@ function ensure(pi: ExtensionAPI, ctx: ExtensionContext): void {
 export default function dshStatusline(pi: ExtensionAPI): void {
 	pi.on("session_start", (_event, ctx) => ensure(pi, ctx));
 	pi.on("session_switch", (_event, ctx) => ensure(pi, ctx));
-	pi.on("turn_end", (_event, ctx) => {
-		ensure(pi, ctx);
-		if (currentCtx) refreshVcs(pi, currentCtx);
-	});
-	pi.on("tool_result", (_event, ctx) => {
-		ensure(pi, ctx);
-		if (currentCtx) refreshVcs(pi, currentCtx);
-	});
+	pi.on("turn_end", (_event, ctx) => ensure(pi, ctx));
 }
