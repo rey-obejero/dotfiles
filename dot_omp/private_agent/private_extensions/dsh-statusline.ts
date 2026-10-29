@@ -16,7 +16,6 @@
  * If the getters move, the label is omitted.
  */
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import type { SessionMessageEntry } from "@oh-my-pi/pi-coding-agent/session/session-entries";
 import { CustomEditor } from "@oh-my-pi/pi-tui/prompt/custom-editor";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -25,10 +24,6 @@ import { join } from "node:path";
 const WIDGET_KEY = "dsh-statusline";
 const SEP = " · ";
 const RESET = "\x1b[0m";
-
-/** dsh-TUI's segmentation palette; dark and light themes share it. */
-const SEGMENT_COLORS = ["#22305F", "#2B3D78", "#344A92", "#4D6BFE", "#5A7CFF"] as const;
-const FREE_FILL = "#E8E8E8";
 
 type StatusColor = "muted" | "text" | "accent" | "success" | "warning" | "error";
 type FgTheme = { fg(color: StatusColor, text: string): string };
@@ -50,7 +45,6 @@ export interface FooterSnapshot {
 	costPeriod?: "peak" | "idle";
 	path: string;
 	context?: { used: number; window: number; percent: number };
-	segments?: { system: number; prompt: number; assistant: number; thinking: number; tools: number };
 }
 
 const vim: VimSnapshot = { enabled: false, mode: "insert", pending: "", selectedLines: 0 };
@@ -85,11 +79,6 @@ export function formatTokens(count: number): string {
 	if (value < 1_000_000) return `${Math.round(value / 1000)}k`;
 	if (value < 10_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
 	return `${Math.round(value / 1_000_000)}M`;
-}
-
-/** dsh's bar readout: `43.8k/128k 34.2%`. */
-export function formatBarReadout(used: number, window: number, percent: number): string {
-	return `${formatTokens(used)}/${formatTokens(window)} ${percent.toFixed(1)}%`;
 }
 
 /** dsh's ctx field: `34% (43.8k/128k)`, or `9.7% (…)` below ten percent. */
@@ -155,73 +144,6 @@ function truncate(text: string, width: number): string {
 function padTo(text: string, width: number): string {
 	const current = visibleWidth(text);
 	return current >= width ? text : text + " ".repeat(width - current);
-}
-
-function bg(hex: string): string {
-	const value = Number.parseInt(hex.slice(1), 16);
-	const r = (value >> 16) & 0xff;
-	const g = (value >> 8) & 0xff;
-	const b = value & 0xff;
-	return `\x1b[48;2;${r};${g};${b}m`;
-}
-
-/** Largest-remainder split so segment cells always sum to `total`. */
-export function allocate(total: number, weights: readonly number[]): number[] {
-	const sum = weights.reduce((acc, weight) => acc + Math.max(0, weight), 0);
-	if (total <= 0 || sum <= 0) return weights.map(() => 0);
-	const raw = weights.map(weight => (Math.max(0, weight) / sum) * total);
-	const cells = raw.map(Math.floor);
-	let remainder = total - cells.reduce((acc, value) => acc + value, 0);
-	const order = raw
-		.map((value, index) => ({ index, fraction: value - Math.floor(value) }))
-		.sort((a, b) => b.fraction - a.fraction);
-	for (let i = 0; remainder > 0; i++, remainder--) cells[order[i % order.length]!.index]! += 1;
-	return cells;
-}
-
-// ── bar ──────────────────────────────────────────────────────────────────
-
-/**
- * dsh's segmented context bar. Same breakpoints: the bar exists only at
- * `width >= 14`, and its readout falls back to percent-only when the full
- * `used/window pct` does not fit the free part.
- */
-export function renderBar(snapshot: FooterSnapshot, width: number): string | undefined {
-	const context = snapshot.context;
-	if (!context || context.window <= 0 || width < 14) return undefined;
-
-	const percent = Math.max(0, Math.min(100, context.percent));
-	const used = Math.min(width, context.used > 0 ? Math.max(1, Math.round((percent / 100) * width)) : 0);
-	const free = width - used;
-
-	let out = "";
-	if (used > 0) {
-		const segments = snapshot.segments;
-		const weights = segments
-			? [segments.system, segments.prompt, segments.assistant, segments.thinking, segments.tools]
-			: [];
-		const allocated = weights.some(weight => weight > 0) ? allocate(used, weights) : [];
-		const cells =
-			allocated.length === 5 && allocated.reduce((a, b) => a + b, 0) === used ? allocated : [used, 0, 0, 0, 0];
-		for (let i = 0; i < cells.length; i++) {
-			const count = cells[i] ?? 0;
-			if (count > 0) out += `${bg(SEGMENT_COLORS[i] ?? SEGMENT_COLORS[2])}${" ".repeat(count)}${RESET}`;
-		}
-	}
-
-	if (free > 0) {
-		const full = formatBarReadout(context.used, context.window, context.percent);
-		const short = `${context.percent.toFixed(1)}%`;
-		const readout = visibleWidth(full) + 1 <= free ? full : visibleWidth(short) + 1 <= free ? short : undefined;
-		if (readout) {
-			const lead = free - visibleWidth(readout);
-			out += `${bg(FREE_FILL)}${" ".repeat(lead)}\x1b[38;2;74;74;74m${readout}\x1b[39m${RESET}`;
-		} else {
-			out += `${bg(FREE_FILL)}${" ".repeat(free)}${RESET}`;
-		}
-	}
-
-	return out;
 }
 
 // ── row ──────────────────────────────────────────────────────────────────
@@ -327,83 +249,10 @@ export function renderFields(snapshot: FooterSnapshot, width: number, theme: FgT
 export function renderFooter(snapshot: FooterSnapshot, width: number, theme: FgTheme): string[] {
 	const contentWidth = Math.max(0, width - 2);
 	if (contentWidth <= 0) return [];
-	const rows: string[] = [];
-	const bar = renderBar(snapshot, contentWidth);
-	if (bar) rows.push(bar);
-	rows.push(renderFields(snapshot, contentWidth, theme));
-	return rows.map(row => ` ${padTo(row, contentWidth)} `);
+	return [` ${padTo(renderFields(snapshot, contentWidth, theme), contentWidth)} `];
 }
 
 // ── live data ─────────────────────────────────────────────────────────────
-
-function textLength(content: unknown): number {
-	if (typeof content === "string") return content.length;
-	if (!Array.isArray(content)) return 0;
-	let total = 0;
-	for (const block of content) {
-		if (
-			typeof block === "object" &&
-			block !== null &&
-			"type" in block &&
-			block.type === "text" &&
-			"text" in block &&
-			typeof block.text === "string"
-		) {
-			total += block.text.length;
-		}
-	}
-	return total;
-}
-
-let segmentCache: { key: string; value: FooterSnapshot["segments"] } | undefined;
-
-/** Estimated composition; the bar scales it to the measured total. */
-function estimateSegments(ctx: ExtensionContext): FooterSnapshot["segments"] | undefined {
-	const entries = ctx.sessionManager.getEntries();
-	let systemLength = 0;
-	try {
-		systemLength = ctx.getSystemPrompt().join("\n").length;
-	} catch {
-		systemLength = 0;
-	}
-	const key = `${entries.length}:${systemLength}:${entries.at(-1)?.timestamp ?? ""}`;
-	if (segmentCache && segmentCache.key === key) return segmentCache.value;
-
-	let prompt = 0;
-	let assistant = 0;
-	let thinking = 0;
-	let tools = 0;
-	for (const entry of entries) {
-		if (entry.type !== "message") continue;
-		const message: SessionMessageEntry["message"] = entry.message;
-		if (message.role === "user") prompt += textLength(message.content);
-		else if (message.role === "toolResult") tools += textLength(message.content);
-		else if (message.role === "assistant") {
-			for (const block of message.content) {
-				if (block.type === "text") assistant += block.text.length;
-				else if (block.type === "thinking") thinking += block.thinking.length;
-				else if (block.type === "toolCall") {
-					const args = JSON.stringify(block.input ?? "");
-					tools += block.name.length + args.length;
-				}
-			}
-		}
-	}
-
-	const total = systemLength + prompt + assistant + thinking + tools;
-	const value =
-		total > 0
-			? {
-					system: systemLength / 4,
-					prompt: prompt / 4,
-					assistant: assistant / 4,
-					thinking: thinking / 4,
-					tools: tools / 4,
-				}
-			: undefined;
-	segmentCache = { key, value };
-	return value;
-}
 
 function pricingPeriod(cost: ModelCost | undefined, now = Date.now()): "peak" | "idle" | undefined {
 	const schedule = cost?.timeBased;
@@ -445,7 +294,6 @@ function buildSnapshot(pi: ExtensionAPI, ctx: ExtensionContext): FooterSnapshot 
 					percent: contextUsage.percent,
 				}
 			: undefined,
-		segments: estimateSegments(ctx),
 	};
 }
 
