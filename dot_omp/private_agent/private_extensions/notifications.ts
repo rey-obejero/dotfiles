@@ -1,48 +1,61 @@
 /**
  * Uniform notifications
  *
- * omp's built-in completion/error/`ask` toasts are disabled in config; this
- * extension sends every toast instead, so their wording and shape stay
- * consistent.
+ * One line per toast, matching dsh-TUI's task-completion shape:
  *
- * Format:
- *   - OSC 99 terminals carry a real title and body:
- *       title  omp – <status>
- *       body   <repo> – <session title>
- *   - OSC 9 and BEL have no title field; omp joins title and body with ": ",
- *     so this extension sends a single composed line instead:
- *       omp – <status> · <repo> – <session title>
+ *   omp · Task complete: <last reply preview>
+ *   omp · Task failed: <error>
+ *   omp · Approval required: <tool>
+ *   omp · Input required
  *
- * The session title keeps its card in the terminal tab; `splitCardTitle`
- * strips the icon and code from the toast, so a Nerd Font glyph never reaches
- * a notification font that cannot render it.
+ * The reply preview is the last settled assistant text, Markdown flattened to
+ * plain text and capped at 200 graphemes. dsh-TUI only notifies successful
+ * completions; the failure, approval and input lines are omp additions.
+ *
+ * Every toast is sent as a single body so terminals that would split title and
+ * body (OSC 99) still render the one-line form.
  */
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
-import { splitCardTitle } from "@oh-my-pi/pi-coding-agent/utils/title-card";
-import { isOsc99Supported, TERMINAL } from "@oh-my-pi/pi-tui";
+import { TERMINAL } from "@oh-my-pi/pi-tui";
 
-const DASH = "–";
+const PREFIX = "omp";
+const SEP = " · ";
+const MAX_PREVIEW = 200;
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+const previewSegmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
 let retrying = false;
 
-function context(ctx: {
-	cwd: string;
-	sessionManager: { getSessionName(): string | undefined };
-}): string {
-	const raw = ctx.sessionManager.getSessionName() || "omp";
-	const session = splitCardTitle(raw)?.title ?? raw;
-	const project = ctx.cwd.split(/[\\/]/).filter(Boolean).pop() || "omp";
-	return `${project} ${DASH} ${session}`;
+function line(title: string, body?: string): string {
+	return body ? `${PREFIX}${SEP}${title}: ${body}` : `${PREFIX}${SEP}${title}`;
 }
 
-function notify(status: string, body: string, type: string): void {
-	// OSC 99 renders a title and body separately; OSC 9 and BEL collapse the two
-	// into `title: body`, so there the whole message rides in the body instead.
-	if (isOsc99Supported()) {
-		TERMINAL.sendNotification({ title: `omp ${DASH} ${status}`, body, type, actions: "focus" });
-		return;
-	}
+function notify(text: string, type: string): void {
+	TERMINAL.sendNotification({ body: text, type, actions: "focus" });
+}
 
-	TERMINAL.sendNotification({ body: `omp ${DASH} ${status} ${DASH} ${body}`, type, actions: "focus" });
+/** Plain-text preview; notification daemons may interpret raw Markdown headings. */
+function flattenMarkdown(text: string): string {
+	return text
+		.replace(ANSI_RE, "")
+		.replace(/^```.*$/gm, "")
+		.replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+		.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+		.replace(/^#{1,6}\s+/gm, "")
+		.replace(/^>\s?/gm, "")
+		.replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, "")
+		.replace(/<[^>]*>/g, "")
+		.replace(/[`*_~]/g, "")
+		.replace(/\|/g, " ")
+		.replace(/[\x00-\x1f\x7f-\x9f]/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
+function clampPreview(text: string): string {
+	if (!text) return "";
+	const graphemes = Array.from(previewSegmenter.segment(text), part => part.segment);
+	return graphemes.length > MAX_PREVIEW ? `${graphemes.slice(0, MAX_PREVIEW - 1).join("")}…` : text;
 }
 
 export default function notifications(pi: ExtensionAPI): void {
@@ -54,29 +67,33 @@ export default function notifications(pi: ExtensionAPI): void {
 	});
 
 	pi.on("agent_end", (event, ctx) => {
-		if (event.willContinue || retrying) return;
+		if (event.willContinue || retrying || ctx.hasPendingMessages()) return;
 
 		const last = event.messages.findLast(message => message.role === "assistant");
-		if (last?.stopReason === "aborted") return;
+		if (last === undefined || last.stopReason === "aborted") return;
 
-		const failed = last?.stopReason === "error";
-		notify(failed ? "Failed" : "Completed", context(ctx), failed ? "error" : "completion");
+		if (last.stopReason === "error") {
+			const detail = clampPreview(
+				flattenMarkdown(last.errorClassificationMessage ?? last.errorMessage ?? ""),
+			);
+			notify(line("Task failed", detail), "error");
+			return;
+		}
+
+		const text = last.content
+			.filter(block => block.type === "text")
+			.map(block => block.text)
+			.join("\n");
+		notify(line("Task complete", clampPreview(flattenMarkdown(text))), "completion");
 	});
 
 	pi.on("tool_approval_requested", (event, ctx) => {
 		if (!ctx.hasUI) return;
-
-		const permission = event.toolName === "computer" || event.toolName === "browser";
-		notify(
-			`${permission ? "Permission needed for" : "Approval needed for"} ${event.toolName}`,
-			context(ctx),
-			"ask",
-		);
+		notify(line("Approval required", event.toolName), "ask");
 	});
 
 	pi.on("tool_call", (event, ctx) => {
 		if (!ctx.hasUI || event.toolName !== "ask") return;
-
-		notify("Input needed", context(ctx), "ask");
+		notify(line("Input required"), "ask");
 	});
 }
