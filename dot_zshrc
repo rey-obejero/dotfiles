@@ -40,7 +40,30 @@ if [ -f "$ZSH/oh-my-zsh.sh" ]; then
 fi
 
 # ==============================================================================
-# 3. Prompt Configuration (Starship Hook)
+# 3. Moondust colors
+# ==============================================================================
+
+# Terminal ANSI colors are remapped by WezTerm; these values choose the
+# matching accents for command syntax, paths, errors, and suggestions.
+export LS_COLORS='di=01;34:ln=01;36:so=01;35:pi=01;33:ex=01;32:bd=01;33:cd=01;33:su=01;31:sg=01;31:tw=01;31:ow=01;34:st=01;34:*.tar=01;31:*.tgz=01;31:*.zip=01;31:*.gz=01;31:*.bz2=01;31:*.xz=01;31:*.zst=01;31:*.7z=01;31:*.rar=01;31:*.jpg=01;35:*.png=01;35:*.mp4=01;35:*.mkv=01;35:*.pdf=01;35:*.md=01;34:*.json=01;34:*.yml=01;34:*.yaml=01;34:*.toml=01;34:*.lua=01;34:*.ts=01;34:*.js=01;34:*.rs=01;34:*.go=01;34'
+
+ZSH_HIGHLIGHT_STYLES[comment]='fg=7'
+ZSH_HIGHLIGHT_STYLES[command]='fg=4'
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=4'
+ZSH_HIGHLIGHT_STYLES[alias]='fg=4'
+ZSH_HIGHLIGHT_STYLES[function]='fg=4'
+ZSH_HIGHLIGHT_STYLES[precommand]='fg=4'
+ZSH_HIGHLIGHT_STYLES[path]='fg=4'
+ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=4'
+ZSH_HIGHLIGHT_STYLES[globbing]='fg=3'
+ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=3'
+ZSH_HIGHLIGHT_STYLES[string]='fg=6'
+ZSH_HIGHLIGHT_STYLES[reserved-word]='fg=5'
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=1'
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+
+# ==============================================================================
+# 4. Prompt Configuration (Starship Hook)
 # ==============================================================================
 # Starship MUST be initialized AFTER Oh My Zsh, otherwise OMZ will break it
 eval "$(starship init zsh)"
@@ -84,3 +107,6 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME/bin:$PATH" ;;
 esac
 # pnpm end
+
+# bun completions
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"

@@ -7,22 +7,7 @@ return {
         component_separators = { left = "", right = "" },
         section_separators = { left = "", right = "" },
         icons_enabled = false, -- No icons anywhere in statusline
-        theme = {
-          normal = {
-            a = { fg = "#6e7781", bg = "#ffffff", gui = "NONE" },
-            b = { fg = "#6e7781", bg = "#ffffff" },
-            c = { fg = "#1b1f24", bg = "#ffffff" },
-          },
-          insert = { a = { fg = "#6e7781", bg = "#ffffff", gui = "NONE" } },
-          visual = { a = { fg = "#6e7781", bg = "#ffffff", gui = "NONE" } },
-          replace = { a = { fg = "#6e7781", bg = "#ffffff", gui = "NONE" } },
-          command = { a = { fg = "#6e7781", bg = "#ffffff", gui = "NONE" } },
-          inactive = {
-            a = { fg = "#8c8e90", bg = "#f6f8fa" },
-            b = { fg = "#8c8e90", bg = "#f6f8fa" },
-            c = { fg = "#8c8e90", bg = "#f6f8fa" },
-          },
-        },
+        theme = "moondust",
       })
 
       -- Minimal sections: mode (text) | filename | git branch =>> | position

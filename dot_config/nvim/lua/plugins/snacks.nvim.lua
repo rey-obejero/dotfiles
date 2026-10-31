@@ -57,16 +57,16 @@ return {
       return opts
     end,
 
-    -- Pure palette tweaks for a polished github_light presentation
+    -- Moondust palette tweaks for the dashboard
     init = function()
       vim.api.nvim_create_autocmd("User", {
         pattern = "VeryLazy",
         callback = function()
           -- Subdued slate grays and dark text for high-contrast light backgrounds
-          vim.api.nvim_set_hl(0, "SnacksDashboardHeader", { fg = "#57606a", bold = true })
-          vim.api.nvim_set_hl(0, "SnacksDashboardKey", { fg = "#57606a", bold = true })
-          vim.api.nvim_set_hl(0, "SnacksDashboardIcon", { fg = "#6e7781" })
-          vim.api.nvim_set_hl(0, "SnacksDashboardDesc", { fg = "#24292f" })
+          vim.api.nvim_set_hl(0, "SnacksDashboardHeader", { fg = "#33383D", bold = true })
+          vim.api.nvim_set_hl(0, "SnacksDashboardKey", { fg = "#33383D", bold = true })
+          vim.api.nvim_set_hl(0, "SnacksDashboardIcon", { fg = "#71787F" })
+          vim.api.nvim_set_hl(0, "SnacksDashboardDesc", { fg = "#434A51" })
         end,
       })
     end,
