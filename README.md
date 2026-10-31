@@ -1,6 +1,6 @@
 # Dotfiles
 
-![Terminal Screenshot](./documentation/assets/screenshot.png)
+![Terminal Screenshot](./docs/assets/screenshot.png)
 
 ## Table of Contents
 
