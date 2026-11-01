@@ -31,17 +31,21 @@ Used by WezTerm and inherited by tmux and Zsh:
 | 2 | `#1F639E` |
 | 3 | `#7D4E00` |
 | 4 | `#1F639E` |
-| 5 | `#144B7B` |
-| 6 | `#3882C2` |
+| 5 | `#575E66` |
+| 6 | `#71787F` |
 | 7 | `#8E979F` |
 | 8 | `#71787F` |
 | 9 | `#B35900` |
 | 10 | `#3882C2` |
 | 11 | `#7D4E00` |
 | 12 | `#65A4D7` |
-| 13 | `#144B7B` |
-| 14 | `#8EBCE1` |
+| 13 | `#33383D` |
+| 14 | `#8E979F` |
 | 15 | `#F6F7F8` |
+
+In the current gray-first palette, slots 5, 6, 13, and 14 are deliberately
+demoted to grays. The reference has no ANSI palette of its own, so this remains
+a port-level choice.
 
 ## Reference usage
 
@@ -116,8 +120,8 @@ is 1.50:1. Error `#B35900` and warning `#7D4E00` are the only warm colors.
 - OMP `selectedBg` is blue 1 `#E2EFF8`; the reference editor selection is blue
   2 `#BBD7EC`, list focus highlight is blue 2, and list active selection is
   blue 5. OMP is using the reference’s lighter selection-highlight shade.
-- OMP and bat add function/type roles beyond the reference’s five syntax
-  classes; those are port-level interpretations, not reference tokens.
+- OMP, Neovim, and bat add function/type roles beyond the reference’s five
+  syntax classes; those are port-level interpretations, not reference tokens.
 - The 16-slot ANSI mapping is our construction. The reference’s `terminal`
   block is commented out and defines no ANSI palette.
 - Error/warning tokens, the status line, prompts, and diff semantics are port

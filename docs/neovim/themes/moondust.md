@@ -32,7 +32,11 @@ may remain in `lazy-lock.json`; it is no longer referenced.
 | `String` | `#1F639E` |
 | `Function` | `#33383D` |
 | `Keyword` | `#434A51` |
-| `Type` | `#1F639E` |
+| `Type` | `#33383D` italic |
+| `Typedef` | `#33383D` italic |
+| `Constant` | `#434A51` |
+| `StorageClass` / `Structure` / `Label` | `#434A51` |
+| `PreProc` / `Include` / `Define` / `Macro` | `#71787F` |
 | `Visual` | bg `#BBD7EC` |
 | `Search` | bg `#BBD7EC` |
 | `WinSeparator` | `#D7DCDF` |

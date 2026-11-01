@@ -56,5 +56,6 @@ branch, not `1;36`.
 zsh -lic 'typeset -p ZSH_HIGHLIGHT_STYLES; print -r -- "$ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE"'
 ```
 
-Expected: `command='fg=4'`, `string='fg=6'`, `comment='fg=7'`,
+Expected: `command='fg=0,bold'`, `builtin='fg=0'`, `path='fg=8'`,
+`string='fg=6'`, `comment='fg=7'`,
 `ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'`.

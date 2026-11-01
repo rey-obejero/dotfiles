@@ -26,10 +26,10 @@ bat uses a custom TextMate theme built from the Moondust light palette.
 | Comments | `#8E979F` italic |
 | Strings / symbols | `#1F639E` |
 | Numbers | `#33383D` |
-| Constants | `#3882C2` |
+| Constants | `#434A51` |
 | Keywords / storage | `#434A51` |
 | Functions | `#33383D` |
-| Types | `#1F639E` |
+| Types | `#33383D` italic |
 | Variables | `#434A51` |
 | Operators / punctuation | `#71787F` |
 | Invalid / errors | `#B35900` bold |

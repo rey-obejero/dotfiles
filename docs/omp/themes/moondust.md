@@ -34,7 +34,9 @@ appearance.
 | Status line background | `#F6F7F8` |
 | User/tool panel | `#F6F7F8` |
 | Raised panel | `#E8EBED` |
+| Tool pending panel | `#F6F7F8` |
 | Tool success panel | `#F2F8FC` |
+| Success indicator | `#33383D` |
 | Error | `#B35900` |
 | Warning | `#7D4E00` |
 
