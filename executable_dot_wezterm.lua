@@ -21,8 +21,8 @@ config.color_schemes = {
 			"#1F639E",
 			"#7D4E00",
 			"#1F639E",
-			"#144B7B",
-			"#3882C2",
+			"#575E66",
+			"#71787F",
 			"#8E979F",
 		},
 		brights = {
@@ -31,8 +31,8 @@ config.color_schemes = {
 			"#3882C2",
 			"#7D4E00",
 			"#65A4D7",
-			"#144B7B",
-			"#8EBCE1",
+			"#33383D",
+			"#8E979F",
 			"#F6F7F8",
 		},
 		tab_bar = {
