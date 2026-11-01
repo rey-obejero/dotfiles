@@ -38,6 +38,9 @@ appearance.
 | Error | `#B35900` |
 | Warning | `#7D4E00` |
 
+Reference note: the reference editor selection is `#BBD7EC` (blue 2); OMP's
+`selectedBg` is `#E2EFF8` (blue 1), the lighter selection-highlight shade.
+
 See the [shared palette](../../themes/moondust.md).
 
 ## Apply
