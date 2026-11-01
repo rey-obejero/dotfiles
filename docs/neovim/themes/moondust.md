@@ -28,6 +28,7 @@ may remain in `lazy-lock.json`; it is no longer referenced.
 | Group | Value |
 | --- | --- |
 | `Normal` | bg `#FFFFFF`, fg `#434A51` |
+| `Cursor` | bg `#71787F`, fg `#FFFFFF` |
 | `Comment` | `#8E979F` |
 | `String` | `#1F639E` |
 | `Function` | `#33383D` |
@@ -42,7 +43,7 @@ may remain in `lazy-lock.json`; it is no longer referenced.
 | `WinSeparator` | `#D7DCDF` |
 | `DiagnosticError` | `#B35900` |
 | `DiagnosticWarn` | `#7D4E00` |
-| `DiagnosticInfo` | `#1F639E` |
+| `DiagnosticInfo` | `#8E979F` |
 
 lualine uses `theme = "moondust"`; the dashboard highlights use the same
 palette.

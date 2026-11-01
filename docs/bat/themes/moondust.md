@@ -23,6 +23,7 @@ bat uses a custom TextMate theme built from the Moondust light palette.
 | --- | --- |
 | Background | `#FFFFFF` |
 | Foreground | `#434A51` |
+| Line highlight | `#E8EBED` |
 | Comments | `#8E979F` italic |
 | Strings / symbols | `#1F639E` |
 | Numbers | `#33383D` |

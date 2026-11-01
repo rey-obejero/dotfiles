@@ -31,9 +31,10 @@ The rest of the prompt is disabled or uses the terminal ANSI mapping.
   strings, globbing, and unknown tokens.
 - `ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'` for muted suggestions.
 
-These values use the ANSI slots documented in the
+Most values use the ANSI slots documented in the
 [shared palette](../../themes/moondust.md#terminal-ansi-mapping); the exact
-RGB rendering comes from WezTerm.
+RGB rendering comes from WezTerm. The command family uses truecolor gray 7
+`#434A51` so it matches the reference `p1` without needing an ANSI slot.
 
 ## Apply
 
@@ -56,6 +57,6 @@ branch, not `1;36`.
 zsh -lic 'typeset -p ZSH_HIGHLIGHT_STYLES; print -r -- "$ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE"'
 ```
 
-Expected: `command='fg=0,bold'`, `builtin='fg=0'`, `path='fg=8'`,
+Expected: `command='fg=#434A51'`, `builtin='fg=#434A51'`, `path='fg=8'`,
 `string='fg=6'`, `comment='fg=7'`,
 `ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'`.
