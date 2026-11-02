@@ -21,11 +21,16 @@ surface.
 | `pane-active-border-style` | `fg=#1F639E` |
 | `message-style` | `bg=#E8EBED,fg=#33383D` |
 | `mode-style` | `bg=#BBD7EC,fg=#24292D` |
+| `copy-mode-position-style` | `bg=#B6BEC3,fg=#24292D` |
 | `clock-mode-colour` | `#1F639E` |
 | `display-panes-active-colour` | `#1F639E` |
 
 The status bar inherits the terminal background, the active window has no fill,
 and the session count is right-aligned at the edge.
+
+The copy-mode position indicator is styled explicitly with the reference
+scrollbar gray, because tmux otherwise inherits `mode-style` and paints the
+scroll readout with the selection blue.
 
 ## Apply
 
@@ -38,7 +43,7 @@ tmux source-file ~/.tmux.conf
 
 ```sh
 for o in status-style status-right status-right-length \
-  window-status-current-style pane-active-border-style mode-style; do
+  window-status-current-style pane-active-border-style mode-style copy-mode-position-style; do
   printf '%s = ' "$o"
   tmux show-options -gv "$o"
 done
@@ -53,6 +58,7 @@ status-right-length = 4
 window-status-current-style = bg=default,fg=#24292D,bold
 pane-active-border-style = fg=#1F639E
 mode-style = bg=#BBD7EC,fg=#24292D
+copy-mode-position-style = bg=#B6BEC3,fg=#24292D
 ```
 
 For an isolated check, start a separate server with
