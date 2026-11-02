@@ -32,8 +32,9 @@ and the session count is right-aligned at the edge.
 tmux fills only the cells its own text occupies, so the message line, the
 command prompt, and the copy-mode position indicator are all small chips rather
 than full-width bars. All three use the reference widget-border gray `#D7DCDF`
-with `#24292D` text: gray 1 `#E8EBED` sits at only 1.38:1 against white, which
-reads as a wash over a large row but nearly vanishes behind a short badge. The
+with `#24292D` text: gray 1 `#E8EBED` sits at only 1.20:1 against white, which
+reads as a wash over a large row but nearly vanishes behind a short badge, while
+`#D7DCDF` reaches 1.38:1 and still holds a visible edge at badge size. The
 one shade is deliberate, because these chips differ only in which transient mode
 they announce, and their text already says that. The position indicator is set
 explicitly because tmux otherwise inherits `mode-style` and paints the scroll
