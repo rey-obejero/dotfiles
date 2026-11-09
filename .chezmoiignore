@@ -24,6 +24,7 @@ README.md
 .omp/agent/*.db-wal
 .omp/agent/*.db-shm
 .omp/agent/last-changelog-version
+.omp/agent/notifications.json
 
 # Credential material. Un-ignore these only if you store them with chezmoi's
 # age encryption (encrypted_ prefix) or a secret manager.
