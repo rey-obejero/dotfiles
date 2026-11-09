@@ -617,10 +617,10 @@ async function showAccountView(ctx: ExtensionContext): Promise<void> {
 // ─── Command ────────────────────────────────────────────────────────────────
 
 const USAGE = [
-	"Usage: /cmdc [zdr | usage]",
-	"  zdr    strict zero-data-retention headers on Command Code requests",
-	"  usage  fullscreen account view: limits, balance, spend",
-	"  quota  alias for usage",
+	"Usage: /cmdc [usage]",
+	"  usage  fullscreen account view: 5-hour, weekly and monthly limits,",
+	"         balance and period, then the billing period's requests, tokens",
+	"         and spend; quota is kept as an alias",
 ].join("\n");
 
 const ZDR_USAGE = [
@@ -630,42 +630,31 @@ const ZDR_USAGE = [
 	"  status  report the current state without changing it",
 ].join("\n");
 
-// omp completes `/cmdc <prefix>` with the whole typed argument string
-// ("/cmdc zdr o" → argumentText "zdr o"), and dropdown acceptance replaces
-// exactly that prefix, so completion values must carry the `zdr ` stem and the
-// completer must switch on the word currently being typed.
-function buildCompletions(options: readonly { value: string; description: string }[]) {
-	return (prefix: string): { value: string; label: string; description: string }[] | null => {
-		const [head = "", tail = ""] = prefix.split(/(?<=\s)/);
-		const query = head.trim().toLowerCase();
-		const isSub = argumentsIncludeVerb(query);
-		const pool = isSub
-			? options.filter(option => option.value.startsWith(`${query} `))
-			: options;
-		const word = tail.trim().length > 0 ? tail : isSub ? "" : head.trim().toLowerCase();
-		const matches = pool
-			.filter(option => option.value.startsWith(isSub ? `${query} ${word}` : word))
-			.map(option => ({
-				value: isSub ? `${query} ` : "",
-				label: option.value.slice(isSub ? query.length + 1 : 0),
-				description: option.description,
-			}));
-		return matches.length > 0 ? matches : null;
-	};
-}
-
-function argumentsIncludeVerb(query: string): boolean {
-	return query === "zdr";
-}
-
+/**
+ * omp's argument completion is prefix-of-the-whole-args: the provider gets
+ * `commandText` after `"/cmdc "` verbatim (`""`, `"zdr"`, `"zdr o"`), and on
+ * acceptance the editor replaces *that whole string* with the item's `value`
+ * (see `autocomplete.ts` `applyCompletion` → `beforePrefix + item.value`).
+ *
+ * So the completion model is: match the current arguments as a filter, but
+ * hand back the **complete text to type** — `zdr`, `zdr on`, `usage` — never a
+ * word-level suffix like `on`. `label` is display-only.
+ */
 function argumentCompletions(prefix: string) {
-	return buildCompletions([
+	const query = prefix.trim().toLowerCase();
+	const options = [
 		{ value: "zdr", description: "ZDR controls for this session" },
 		{ value: "zdr on", description: "Enforce ZDR on Command Code requests" },
 		{ value: "zdr off", description: "Send Command Code requests untagged" },
 		{ value: "zdr status", description: "Show this session's ZDR state" },
-		{ value: "usage", description: "Billing-period usage: limits, balance, spend" },
-	])(prefix);
+		{ value: "usage", description: "Fullscreen account view: limits, balance, spend" },
+	];
+	// `zdr` is a submenu head: it matches its own entry (status is implied),
+	// and when one or more `zdr …` leaves exist, `zdr` itself stays selectable.
+	const matches = (query === "" ? options : options.filter(option => option.value.startsWith(query))).map(
+		option => ({ value: option.value, label: option.value, description: option.description }),
+	);
+	return matches.length > 0 ? matches : null;
 }
 
 function handleZdr(argument: string, ctx: ExtensionContext): void {
