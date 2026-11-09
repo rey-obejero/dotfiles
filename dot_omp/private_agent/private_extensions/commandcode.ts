@@ -92,7 +92,7 @@ function activate(ctx: ExtensionContext): ZdrState {
 function describe(state: ZdrState): string {
 	const origin =
 		state.source === "env" ? `seeded by CMD_ZDR=${process.env.CMD_ZDR ?? "unset"}` : "set in this session";
-	return `ZDR ${state.enabled ? "ON" : "OFF"} (${origin}).`;
+	return `zdr ${state.enabled ? "on" : "off"} (${origin})`;
 }
 
 function installFetchWrapper(): void {
@@ -257,7 +257,7 @@ async function loadDashboard(ctx: ExtensionContext): Promise<Dashboard | undefin
 	const key = await resolveApiKey(ctx);
 	if (key === undefined) {
 		ctx.ui.notify(
-			"No Command Code API key. Run /login for the Command Code provider or set COMMAND_CODE_API_KEY.",
+			"No Command Code API key. Set it with /login or COMMAND_CODE_API_KEY.",
 			"error",
 		);
 		return undefined;
@@ -348,14 +348,14 @@ type Style = { fg(color: "muted" | "success" | "warning" | "error", text: string
 const PLAIN_STYLE: Style = { fg: (_color, text) => text };
 
 const PLAN_LABELS: readonly (readonly [string, string])[] = [
-	["individual-provider", "Provider"],
-	["individual-pro-v1", "Pro"],
-	["individual-goat", "GOAT"],
-	["individual-go", "Go"],
-	["individual-ultra", "Ultra"],
-	["individual-max", "Max"],
-	["individual-pro", "Pro"],
-	["teams-pro", "Teams Pro"],
+	["individual-provider", "provider"],
+	["individual-pro-v1", "pro"],
+	["individual-goat", "goat"],
+	["individual-go", "go"],
+	["individual-ultra", "ultra"],
+	["individual-max", "max"],
+	["individual-pro", "pro"],
+	["teams-pro", "teams pro"],
 ];
 
 /** Longest matching prefix wins; an unrecognised id prints raw. */
@@ -408,11 +408,11 @@ function row(label: string, barText: string, detail: string, style: Style): stri
 }
 
 /**
- * Fullscreen `usage` dashboard idiom: the overlay borrows the alternate screen
- * (`fullscreen: true`), so the transcript is untouched and not scrollable
- * behind it. The panel paints the full pane — header (freshness), a fixed-size
- * scroll region, a rule, the hint footer — with content pinned to the top of
- * its region, exactly like `UsageDashboardComponent.render()`.
+ * Fullscreen account panel, matching the built-in `/usage` dashboard: the
+ * overlay borrows the alternate screen (`fullscreen: true`), so the transcript
+ * is untouched and not scrollable behind it. The panel paints the full pane —
+ * header (snapshot age), a fixed-size scroll region, a rule, the hint footer —
+ * with content pinned to the top of its region.
  */
 async function fullscreenAccountView(
 	ctx: ExtensionContext,
@@ -423,8 +423,6 @@ async function fullscreenAccountView(
 		ctx.ui.notify([title, ...build(PLAIN_STYLE)].join("\n"), "info");
 		return;
 	}
-
-	let refetchRequested = false;
 
 	await ctx.ui.custom<void>(
 		(tui, theme, keybindings, done) => {
@@ -443,8 +441,9 @@ async function fullscreenAccountView(
 			let scroll = 0;
 			let viewportRows = 0;
 			let contentRows = 5;
-			let refreshing = false;
-			const renderAt = Date.now();
+			// Freshness baseline is when the data was fetched, not when the
+			// panel opened — same anchor the built-in dashboard uses.
+			let renderAt = memo?.at;
 			const apply = (): void => {
 				// The alternate screen has no scrollback: pad with empty rows so
 				// the content stays pinned to the top and the rule/footer sit
@@ -453,9 +452,9 @@ async function fullscreenAccountView(
 				body.setLines(padded.slice(scroll, scroll + contentRows));
 				body.setHeight(contentRows);
 				header.setLines([
-					refreshing
-						? theme.fg("muted", "refreshing…")
-						: theme.fg("muted", `checked ${formatDuration(Date.now() - renderAt)} ago`),
+					renderAt === undefined
+						? ""
+						: theme.fg("muted", `checked ${formatDuration(Math.max(0, Date.now() - renderAt))} ago`),
 				]);
 				const hintParts = [
 					tui.terminal.rows > 18 && source.length > contentRows ? "↑/↓/pgup/pgdn scroll · " : "",
@@ -483,13 +482,15 @@ async function fullscreenAccountView(
 						return;
 					}
 					if (data === "r") {
-						// The memo means a burst of r presses costs one round trip
-						// at most; the panel redraws with fresh rows next frame.
-						if (!refetchRequested) {
-							refetchRequested = true;
-							refreshing = true;
-							panel.invalidate();
-						}
+						// Kick off a refetch; apply() re-runs on the next render
+						// frame and reports the memo's age from the new snapshot.
+						void loadDashboard(ctx).then(fresh => {
+							if (fresh === undefined) return;
+							source.length = 0;
+							source.push(...build(theme));
+							renderAt = memo?.at;
+							apply();
+						});
 						return;
 					}
 					const before = scroll;
@@ -507,10 +508,6 @@ async function fullscreenAccountView(
 			overlayOptions: { anchor: "bottom-center", width: "100%", maxHeight: "100%", margin: 0, fullscreen: true },
 		},
 	);
-
-	if (refetchRequested) {
-		await loadDashboard(ctx);
-	}
 }
 
 function windowLine(label: string, limit: WindowLimit | undefined, style: Style): string | undefined {
@@ -526,7 +523,7 @@ async function showAccountView(ctx: ExtensionContext): Promise<void> {
 	const data = await loadDashboard(ctx);
 	if (data === undefined) return;
 
-	await fullscreenAccountView(ctx, "Command Code account", style => {
+	await fullscreenAccountView(ctx, "Command Code usage", style => {
 		const lines: string[] = [];
 		const failures = new Map(data.errors.map(error => [error.endpoint, error.message]));
 		const { credits, subscription, usage } = data;
@@ -644,17 +641,17 @@ async function showAccountView(ctx: ExtensionContext): Promise<void> {
 // ─── Command ────────────────────────────────────────────────────────────────
 
 const USAGE = [
-	"Usage: /cmdc [usage]",
-	"  usage  fullscreen account view: 5-hour, weekly and monthly limits,",
-	"         balance and period, then the billing period's requests, tokens",
-	"         and spend; quota is kept as an alias",
+	"Usage: /cmdc [zdr | usage]",
+	"  zdr    per-session zero-data-retention headers",
+	"  usage  account view: limits, balance and spend",
+	"         for the current billing period (alias: quota)",
 ].join("\n");
 
 const ZDR_USAGE = [
 	"Usage: /cmdc zdr [on|off|status]",
-	"  on      set enabled and report ZDR ON (warning)",
-	"  off     set disabled and report ZDR OFF (default)",
-	"  status  report the current state without changing it",
+	"  on      enforce zero-data-retention headers for this session",
+	"  off     send untagged requests (default)",
+	"  status  show the current state",
 ].join("\n");
 
 /**
@@ -670,11 +667,11 @@ const ZDR_USAGE = [
 function argumentCompletions(prefix: string) {
 	const query = prefix.trim().toLowerCase();
 	const options = [
-		{ value: "zdr", description: "ZDR controls for this session" },
-		{ value: "zdr on", description: "Enforce ZDR on Command Code requests" },
-		{ value: "zdr off", description: "Send Command Code requests untagged" },
-		{ value: "zdr status", description: "Show this session's ZDR state" },
-		{ value: "usage", description: "Fullscreen account view: limits, balance, spend" },
+		{ value: "zdr", description: "zero-data-retention headers for this session" },
+		{ value: "zdr on", description: "enforce ZDR on Command Code requests" },
+		{ value: "zdr off", description: "send Command Code requests untagged" },
+		{ value: "zdr status", description: "show this session's ZDR state" },
+		{ value: "usage", description: "account view: limits, balance, spend" },
 	];
 	// `zdr` is a submenu head: it matches its own entry (status is implied),
 	// and when one or more `zdr …` leaves exist, `zdr` itself stays selectable.
@@ -731,7 +728,7 @@ export default function commandcode(pi: ExtensionAPI): void {
 	});
 
 	pi.registerCommand("cmdc", {
-		description: "Command Code: ZDR, usage",
+		description: "Command Code: session ZDR state and account usage",
 		getArgumentCompletions: argumentCompletions,
 		handler: async (args, ctx) => {
 			const [sub = "", ...rest] = args

@@ -36,9 +36,9 @@ function describe(mode: ApprovalMode, provenance: string): string {
 
 function argumentCompletions(prefix: string) {
 	const options = [
-		{ value: "on", label: "on", description: "Enforce yolo for this process" },
-		{ value: "off", label: "off", description: "Restore the configured approval mode" },
-		{ value: "status", label: "status", description: "Show the current approval mode" },
+		{ value: "on", label: "on", description: "yolo for the rest of this process" },
+		{ value: "off", label: "off", description: "clear the override" },
+		{ value: "status", label: "status", description: "show the current approval mode" },
 	];
 	const query = prefix.trim().toLowerCase();
 	const matches = options.filter(option => option.value.startsWith(query));
@@ -47,12 +47,12 @@ function argumentCompletions(prefix: string) {
 
 export default function yolo(pi: ExtensionAPI): void {
 	pi.registerCommand("yolo", {
-		description: "Toggle yolo (auto-approve every tool tier) for this process",
+		description: "yolo approval mode for this process only",
 		getArgumentCompletions: argumentCompletions,
 		handler: (args, ctx) => {
 			const setting = lookup(SETTING_ID) as Setting<ApprovalMode> | undefined;
 			if (setting === undefined) {
-				ctx.ui.notify("tools.approvalMode is not registered in this omp build.", "error");
+				ctx.ui.notify("tools.approvalMode is not registered in this omp build", "error");
 				return;
 			}
 
