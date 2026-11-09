@@ -31,6 +31,8 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { OverlayPanel, PanelDivider, PanelRows } from "@oh-my-pi/pi-tui/chrome/overlay-box";
+import { formatDuration } from "@oh-my-pi/pi-utils";
+
 
 const HEADER = "x-cmd-zdr";
 const HOST = "commandcode.ai";
@@ -408,11 +410,9 @@ function row(label: string, barText: string, detail: string, style: Style): stri
 /**
  * Fullscreen `usage` dashboard idiom: the overlay borrows the alternate screen
  * (`fullscreen: true`), so the transcript is untouched and not scrollable
- * behind it. The viewport is `tui.terminal.rows`, not the factory's width
- * argument — a fullscreen component covers the whole pane.
- *
- * Rows longer than the pane are dropped by `PanelRows` itself, so the merged
- * account view stays aligned instead of wrapping.
+ * behind it. The panel paints the full pane — header (freshness), a fixed-size
+ * scroll region, a rule, the hint footer — with content pinned to the top of
+ * its region, exactly like `UsageDashboardComponent.render()`.
  */
 async function fullscreenAccountView(
 	ctx: ExtensionContext,
@@ -423,59 +423,82 @@ async function fullscreenAccountView(
 		ctx.ui.notify([title, ...build(PLAIN_STYLE)].join("\n"), "info");
 		return;
 	}
+
+	let refetchRequested = false;
+
 	await ctx.ui.custom<void>(
 		(tui, theme, keybindings, done) => {
-			const rows = Math.max(6, tui.terminal.rows - 4);
 			const source: string[] = [...build(theme)];
-			const viewport: string[] = [];
-			let scroll = 0;
-
 			const panel = new OverlayPanel(title);
+			const header = new PanelRows();
+			header.setHeight(1);
 			const body = new PanelRows();
 			const footer = new PanelRows();
 			footer.setHeight(1);
+			panel.addChild(header);
 			panel.addChild(body);
 			panel.addChild(new PanelDivider());
 			panel.addChild(footer);
-			footer.setLines([theme.fg("muted", "r refetch · ↑/↓/pgup/pgdn scroll · esc / q close")]);
 
-			const refresh = (): void => {
-				viewport.length = 0;
-				for (let index = scroll; index < Math.min(source.length, scroll + rows); index++) {
-					viewport.push(source[index] ?? "");
-				}
-				body.setLines(viewport);
+			let scroll = 0;
+			let viewportRows = 0;
+			let contentRows = 5;
+			let refreshing = false;
+			const renderAt = Date.now();
+			const apply = (): void => {
+				// The alternate screen has no scrollback: pad with empty rows so
+				// the content stays pinned to the top and the rule/footer sit
+				// at the pane bottom no matter how long the content is.
+				const padded = [...source, ...new Array(Math.max(0, viewportRows - source.length)).fill("")];
+				body.setLines(padded.slice(scroll, scroll + contentRows));
+				body.setHeight(contentRows);
+				header.setLines([
+					refreshing
+						? theme.fg("muted", "refreshing…")
+						: theme.fg("muted", `checked ${formatDuration(Date.now() - renderAt)} ago`),
+				]);
+				const hintParts = [
+					tui.terminal.rows > 18 && source.length > contentRows ? "↑/↓/pgup/pgdn scroll · " : "",
+					"r refresh · ",
+					"esc / q close",
+				];
+				footer.setLines([theme.fg("muted", hintParts.join(""))]);
 			};
-			refresh();
 
 			return {
-				render: (width: number) => panel.render(width),
+				render: (width: number) => {
+					// Fixed chrome: top border, header, content…, divider, hint,
+					// bottom border — five rows of frame around the body.
+					contentRows = Math.max(5, tui.terminal.rows - 5);
+					const maxScroll = Math.max(0, source.length - contentRows);
+					scroll = Math.max(0, Math.min(scroll, maxScroll));
+					viewportRows = maxScroll > 0 ? source.length : contentRows;
+					apply();
+					return panel.render(width);
+				},
 				invalidate: () => panel.invalidate(),
 				handleInput: (data: string) => {
-					const before = scroll;
 					if (keybindings.matches(data, "tui.select.cancel") || data === "q" || data === "\r" || data === "\n") {
 						done(undefined);
 						return;
 					}
 					if (data === "r") {
-						// Refetch rebuilds the rows in place; the dashboard memo
-						// means a burst of r presses costs one round trip at most.
-						void (async () => {
-							const fresh = await loadDashboard(ctx);
-							if (fresh === undefined) return;
-							source.length = 0;
-							source.push(...build(theme));
-							scroll = Math.max(0, Math.min(scroll, Math.max(0, source.length - rows)));
-							refresh();
-						})();
+						// The memo means a burst of r presses costs one round trip
+						// at most; the panel redraws with fresh rows next frame.
+						if (!refetchRequested) {
+							refetchRequested = true;
+							refreshing = true;
+							panel.invalidate();
+						}
 						return;
 					}
+					const before = scroll;
 					if (keybindings.matches(data, "tui.select.up")) scroll -= 1;
 					else if (keybindings.matches(data, "tui.select.down")) scroll += 1;
-					else if (keybindings.matches(data, "tui.select.pageUp")) scroll -= rows;
-					else if (keybindings.matches(data, "tui.select.pageDown")) scroll += rows;
-					scroll = Math.max(0, Math.min(scroll, Math.max(0, source.length - rows)));
-					if (scroll !== before) refresh();
+					else if (keybindings.matches(data, "tui.select.pageUp")) scroll -= contentRows;
+					else if (keybindings.matches(data, "tui.select.pageDown")) scroll += contentRows;
+					scroll = Math.max(0, Math.min(scroll, Math.max(0, source.length - contentRows)));
+					if (scroll !== before) apply();
 				},
 			};
 		},
@@ -484,6 +507,10 @@ async function fullscreenAccountView(
 			overlayOptions: { anchor: "bottom-center", width: "100%", maxHeight: "100%", margin: 0, fullscreen: true },
 		},
 	);
+
+	if (refetchRequested) {
+		await loadDashboard(ctx);
+	}
 }
 
 function windowLine(label: string, limit: WindowLimit | undefined, style: Style): string | undefined {
