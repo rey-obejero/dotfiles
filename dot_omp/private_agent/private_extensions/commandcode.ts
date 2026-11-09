@@ -19,18 +19,18 @@
  *
  *   /cmdc                 subcommand list, no network
  *   /cmdc zdr [on|off]    this session's ZDR status, or an explicit change
- *   /cmdc quota           5-hour, weekly and monthly limits plus the balance
- *   /cmdc usage           billing-period requests, tokens and spend
+ *   /cmdc usage           fullscreen account view: 5-hour, weekly and monthly
+ *                         limits, balance and period, then the billing period's
+ *                         requests, tokens and spend
  *
- * `quota` and `usage` read the account's `/alpha/*` routes with the stored
- * Command Code key and render in a dismissable overlay. They report the
- * account's billing period, not this session's token usage.
+ * `usage` reads the account's `/alpha/*` routes with the stored Command Code
+ * key and reports the account's billing period, not this session's tokens.
  */
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { Box, Spacer, Text } from "@oh-my-pi/pi-tui";
+import { OverlayPanel, PanelDivider, PanelRows } from "@oh-my-pi/pi-tui/chrome/overlay-box";
 
 const HEADER = "x-cmd-zdr";
 const HOST = "commandcode.ai";
@@ -405,7 +405,16 @@ function row(label: string, barText: string, detail: string, style: Style): stri
 	return `${style.fg("muted", label.padEnd(8))}${barText}  ${detail}`;
 }
 
-async function showPanel(
+/**
+ * Fullscreen `usage` dashboard idiom: the overlay borrows the alternate screen
+ * (`fullscreen: true`), so the transcript is untouched and not scrollable
+ * behind it. The viewport is `tui.terminal.rows`, not the factory's width
+ * argument — a fullscreen component covers the whole pane.
+ *
+ * Rows longer than the pane are dropped by `PanelRows` itself, so the merged
+ * account view stays aligned instead of wrapping.
+ */
+async function fullscreenAccountView(
 	ctx: ExtensionContext,
 	title: string,
 	build: (style: Style) => string[],
@@ -415,29 +424,65 @@ async function showPanel(
 		return;
 	}
 	await ctx.ui.custom<void>(
-		(_tui, theme, keybindings, done) => {
-			const box = new Box(1, 1);
-			box.addChild(new Text(theme.bold(title), 0, 0));
-			box.addChild(new Spacer(1));
-			for (const line of build(theme)) box.addChild(new Text(line, 0, 0));
-			box.addChild(new Spacer(1));
-			box.addChild(new Text(theme.fg("muted", "esc / q close"), 0, 0));
+		(tui, theme, keybindings, done) => {
+			const rows = Math.max(6, tui.terminal.rows - 4);
+			const source: string[] = [...build(theme)];
+			const viewport: string[] = [];
+			let scroll = 0;
+
+			const panel = new OverlayPanel(title);
+			const body = new PanelRows();
+			const footer = new PanelRows();
+			footer.setHeight(1);
+			panel.addChild(body);
+			panel.addChild(new PanelDivider());
+			panel.addChild(footer);
+			footer.setLines([theme.fg("muted", "r refetch · ↑/↓/pgup/pgdn scroll · esc / q close")]);
+
+			const refresh = (): void => {
+				viewport.length = 0;
+				for (let index = scroll; index < Math.min(source.length, scroll + rows); index++) {
+					viewport.push(source[index] ?? "");
+				}
+				body.setLines(viewport);
+			};
+			refresh();
+
 			return {
-				render: (width: number) => box.render(width),
-				invalidate: () => box.invalidate(),
+				render: (width: number) => panel.render(width),
+				invalidate: () => panel.invalidate(),
 				handleInput: (data: string) => {
-					if (
-						keybindings.matches(data, "tui.select.cancel") ||
-						data === "q" ||
-						data === "\r" ||
-						data === "\n"
-					) {
+					const before = scroll;
+					if (keybindings.matches(data, "tui.select.cancel") || data === "q" || data === "\r" || data === "\n") {
 						done(undefined);
+						return;
 					}
+					if (data === "r") {
+						// Refetch rebuilds the rows in place; the dashboard memo
+						// means a burst of r presses costs one round trip at most.
+						void (async () => {
+							const fresh = await loadDashboard(ctx);
+							if (fresh === undefined) return;
+							source.length = 0;
+							source.push(...build(theme));
+							scroll = Math.max(0, Math.min(scroll, Math.max(0, source.length - rows)));
+							refresh();
+						})();
+						return;
+					}
+					if (keybindings.matches(data, "tui.select.up")) scroll -= 1;
+					else if (keybindings.matches(data, "tui.select.down")) scroll += 1;
+					else if (keybindings.matches(data, "tui.select.pageUp")) scroll -= rows;
+					else if (keybindings.matches(data, "tui.select.pageDown")) scroll += rows;
+					scroll = Math.max(0, Math.min(scroll, Math.max(0, source.length - rows)));
+					if (scroll !== before) refresh();
 				},
 			};
 		},
-		{ overlay: true, overlayOptions: { anchor: "center", width: 78, maxHeight: "90%", margin: 1 } },
+		{
+			overlay: true,
+			overlayOptions: { anchor: "bottom-center", width: "100%", maxHeight: "100%", margin: 0, fullscreen: true },
+		},
 	);
 }
 
@@ -450,12 +495,13 @@ function windowLine(label: string, limit: WindowLimit | undefined, style: Style)
 	return row(label, bar(used / cap, style), limit.exceeded ? `${detail}${SEP}EXCEEDED` : detail, style);
 }
 
-async function showQuota(ctx: ExtensionContext): Promise<void> {
+async function showAccountView(ctx: ExtensionContext): Promise<void> {
 	const data = await loadDashboard(ctx);
 	if (data === undefined) return;
 
-	await showPanel(ctx, "Command Code quota", style => {
+	await fullscreenAccountView(ctx, "Command Code account", style => {
 		const lines: string[] = [];
+		const failures = new Map(data.errors.map(error => [error.endpoint, error.message]));
 		const { credits, subscription, usage } = data;
 
 		const subtitle = [
@@ -473,8 +519,7 @@ async function showQuota(ctx: ExtensionContext): Promise<void> {
 		];
 		// Neither omp nor the API exposes a monthly window object: derive it the
 		// way Command Code's Studio Usage page does — billed ÷ (billed + remaining).
-		const remaining =
-			(credits?.monthly ?? 0) + (credits?.purchased ?? 0) + (credits?.free ?? 0);
+		const remaining = (credits?.monthly ?? 0) + (credits?.purchased ?? 0) + (credits?.free ?? 0);
 		const billed = usage?.credits;
 		if (credits !== undefined && billed !== undefined && billed > 0) {
 			const cap = billed + remaining;
@@ -506,10 +551,7 @@ async function showQuota(ctx: ExtensionContext): Promise<void> {
 		}
 
 		if (subscription?.periodStart !== undefined && subscription.periodEnd !== undefined) {
-			const left = Math.max(
-				0,
-				Math.ceil((subscription.periodEnd - Date.now()) / 86_400_000),
-			);
+			const left = Math.max(0, Math.ceil((subscription.periodEnd - Date.now()) / 86_400_000));
 			const tail = subscription.cancelAtPeriodEnd ? `${SEP}cancels at period end` : "";
 			lines.push(
 				row(
@@ -521,72 +563,110 @@ async function showQuota(ctx: ExtensionContext): Promise<void> {
 			);
 		}
 
-		for (const error of data.errors) {
-			lines.push(style.fg("muted", `${error.endpoint.padEnd(8)}  unavailable (${error.message})`));
-		}
-		if (lines.length === 0) lines.push(style.fg("muted", "No account data returned."));
-		return lines;
-	});
-}
+		if (lines.length > 0) lines.push("");
+		lines.push(style.fg("muted", `current billing period${SEP}as of ${stamp(data.fetchedAt)}`));
 
-async function showUsage(ctx: ExtensionContext): Promise<void> {
-	const data = await loadDashboard(ctx);
-	if (data === undefined) return;
-
-	await showPanel(ctx, "Command Code usage", style => {
-		const failure = data.errors.find(error => error.endpoint === "usage");
-		if (failure !== undefined) {
-			return [style.fg("muted", `${"usage".padEnd(8)}  unavailable (${failure.message})`)];
-		}
-
-		const lines: string[] = [style.fg("muted", `current billing period${SEP}as of ${stamp(data.fetchedAt)}`)];
-		const usage = data.usage;
-		if (usage === undefined) return lines;
-
-		const total = usage.totalCount;
-		if (total !== undefined) {
-			const parts: string[] = [];
-			if (usage.completedCount !== undefined) parts.push(`${NUMBER.format(usage.completedCount)} ok`);
-			if (usage.failedCount !== undefined) parts.push(`${NUMBER.format(usage.failedCount)} failed`);
-			if (usage.successRate !== undefined) {
-				const percent = usage.successRate > 1 ? usage.successRate : usage.successRate * 100;
-				parts.push(`${percent.toFixed(1)}% success`);
+		const usageError = failures.get("usage");
+		if (usageError !== undefined) {
+			lines.push(style.fg("muted", `${"usage".padEnd(8)}  unavailable (${usageError})`));
+		} else if (usage !== undefined) {
+			const total = usage.totalCount;
+			if (total !== undefined) {
+				const parts: string[] = [];
+				if (usage.completedCount !== undefined) parts.push(`${NUMBER.format(usage.completedCount)} ok`);
+				if (usage.failedCount !== undefined) parts.push(`${NUMBER.format(usage.failedCount)} failed`);
+				if (usage.successRate !== undefined) {
+					const percent = usage.successRate > 1 ? usage.successRate : usage.successRate * 100;
+					parts.push(`${percent.toFixed(1)}% success`);
+				}
+				lines.push(
+					row(
+						"requests",
+						"",
+						parts.length > 0 ? `${NUMBER.format(total)}  (${parts.join(SEP)})` : NUMBER.format(total),
+						style,
+					),
+				);
 			}
-			lines.push(
-				row(
-					"requests",
-					"",
-					parts.length > 0 ? `${NUMBER.format(total)}  (${parts.join(SEP)})` : NUMBER.format(total),
-					style,
-				),
-			);
+
+			if (usage.tokensIn !== undefined || usage.tokensOut !== undefined) {
+				lines.push(row("tokens", "", `${tokens(usage.tokensIn)} in${SEP}${tokens(usage.tokensOut)} out`, style));
+			}
+
+			if (usage.credits !== undefined) {
+				const average =
+					usage.averageCost === undefined
+						? ""
+						: `${SEP}avg ${usage.averageCost < 0.01 ? usage.averageCost.toFixed(4) : usage.averageCost.toFixed(2)} cr/request`;
+				lines.push(row("spend", "", `${usage.credits.toFixed(2)} cr${average}`, style));
+			}
+
+			if (usage.periodBasis !== undefined) lines.push(row("basis", "", usage.periodBasis, style));
 		}
 
-		if (usage.tokensIn !== undefined || usage.tokensOut !== undefined) {
-			lines.push(row("tokens", "", `${tokens(usage.tokensIn)} in${SEP}${tokens(usage.tokensOut)} out`, style));
+		for (const [endpoint, message] of failures) {
+			if (endpoint === "usage") continue;
+			lines.push("");
+			lines.push(style.fg("muted", `${endpoint.padEnd(8)}  unavailable (${message})`));
 		}
-
-		if (usage.credits !== undefined) {
-			const average =
-				usage.averageCost === undefined
-					? ""
-					: `${SEP}avg ${usage.averageCost < 0.01 ? usage.averageCost.toFixed(4) : usage.averageCost.toFixed(2)} cr/request`;
-			lines.push(row("spend", "", `${usage.credits.toFixed(2)} cr${average}`, style));
-		}
-
-		if (usage.periodBasis !== undefined) lines.push(row("basis", "", usage.periodBasis, style));
 		return lines;
 	});
 }
+
 
 // ─── Command ────────────────────────────────────────────────────────────────
 
 const USAGE = [
-	"Usage: /cmdc [zdr [on|off|status] | quota | usage]",
+	"Usage: /cmdc [zdr | usage]",
 	"  zdr    strict zero-data-retention headers on Command Code requests",
-	"  quota  5-hour, weekly and monthly limits, plus the credit balance",
-	"  usage  billing-period requests, tokens and spend",
+	"  usage  fullscreen account view: limits, balance, spend",
+	"  quota  alias for usage",
 ].join("\n");
+
+const ZDR_USAGE = [
+	"Usage: /cmdc zdr [on|off|status]",
+	"  on      set enabled and report ZDR ON (warning)",
+	"  off     set disabled and report ZDR OFF (default)",
+	"  status  report the current state without changing it",
+].join("\n");
+
+// omp completes `/cmdc <prefix>` with the whole typed argument string
+// ("/cmdc zdr o" → argumentText "zdr o"), and dropdown acceptance replaces
+// exactly that prefix, so completion values must carry the `zdr ` stem and the
+// completer must switch on the word currently being typed.
+function buildCompletions(options: readonly { value: string; description: string }[]) {
+	return (prefix: string): { value: string; label: string; description: string }[] | null => {
+		const [head = "", tail = ""] = prefix.split(/(?<=\s)/);
+		const query = head.trim().toLowerCase();
+		const isSub = argumentsIncludeVerb(query);
+		const pool = isSub
+			? options.filter(option => option.value.startsWith(`${query} `))
+			: options;
+		const word = tail.trim().length > 0 ? tail : isSub ? "" : head.trim().toLowerCase();
+		const matches = pool
+			.filter(option => option.value.startsWith(isSub ? `${query} ${word}` : word))
+			.map(option => ({
+				value: isSub ? `${query} ` : "",
+				label: option.value.slice(isSub ? query.length + 1 : 0),
+				description: option.description,
+			}));
+		return matches.length > 0 ? matches : null;
+	};
+}
+
+function argumentsIncludeVerb(query: string): boolean {
+	return query === "zdr";
+}
+
+function argumentCompletions(prefix: string) {
+	return buildCompletions([
+		{ value: "zdr", description: "ZDR controls for this session" },
+		{ value: "zdr on", description: "Enforce ZDR on Command Code requests" },
+		{ value: "zdr off", description: "Send Command Code requests untagged" },
+		{ value: "zdr status", description: "Show this session's ZDR state" },
+		{ value: "usage", description: "Billing-period usage: limits, balance, spend" },
+	])(prefix);
+}
 
 function handleZdr(argument: string, ctx: ExtensionContext): void {
 	const state = activate(ctx);
@@ -606,21 +686,8 @@ function handleZdr(argument: string, ctx: ExtensionContext): void {
 			ctx.ui.notify(describe(state), "info");
 			return;
 		default:
-			ctx.ui.notify("Usage: /cmdc zdr [on|off]", "warning");
+			ctx.ui.notify(ZDR_USAGE, "warning");
 	}
-}
-
-function argumentCompletions(prefix: string) {
-	const options = [
-		{ value: "zdr", label: "zdr", description: "ZDR status for this session" },
-		{ value: "zdr on", label: "zdr on", description: "Enforce ZDR on Command Code requests" },
-		{ value: "zdr off", label: "zdr off", description: "Send Command Code requests untagged" },
-		{ value: "quota", label: "quota", description: "5-hour, weekly and monthly limits plus balance" },
-		{ value: "usage", label: "usage", description: "Billing-period requests, tokens and spend" },
-	];
-	const query = prefix.trim().toLowerCase();
-	const matches = options.filter(option => option.value.startsWith(query));
-	return matches.length > 0 ? matches : null;
 }
 
 export default function commandcode(pi: ExtensionAPI): void {
@@ -648,7 +715,7 @@ export default function commandcode(pi: ExtensionAPI): void {
 	});
 
 	pi.registerCommand("cmdc", {
-		description: "Command Code: ZDR, quota, usage",
+		description: "Command Code: ZDR, usage",
 		getArgumentCompletions: argumentCompletions,
 		handler: async (args, ctx) => {
 			const [sub = "", ...rest] = args
@@ -660,11 +727,9 @@ export default function commandcode(pi: ExtensionAPI): void {
 				case "zdr":
 					handleZdr(rest.join(" "), ctx);
 					return;
-				case "quota":
-					await showQuota(ctx);
-					return;
 				case "usage":
-					await showUsage(ctx);
+				case "quota":
+					await showAccountView(ctx);
 					return;
 				default:
 					ctx.ui.notify(USAGE, "info");
