@@ -1,13 +1,9 @@
 modelRoles:
   default: "{{ .omp_model_default }}"
   slow: "{{ .omp_model_slow }}"
-  plan: "@slow"
-  reserve: "{{ .omp_model_premium }}"
-  advisor: "{{ .omp_model_premium }}"
 cycleOrder:
   - default
   - slow
-  - reserve
 prewalk:
   enabled: false
 advisor:
@@ -25,18 +21,9 @@ memory:
 retry:
   fallbackChains:
     default:
-      - "{{ .omp_model_premium }}"
-      - "{{ .omp_model_fallback }}"
+      - "{{ .omp_default_model_fallback }}"
     slow:
-      - "{{ .omp_model_premium }}"
-      - "{{ .omp_model_fallback }}"
-    plan:
-      - "{{ .omp_model_premium }}"
-      - "{{ .omp_model_fallback }}"
-    reserve:
-      - "{{ .omp_model_fallback }}"
-    advisor:
-      - "{{ .omp_model_fallback }}"
+      - "{{ .omp_slow_model_fallback }}"
 symbolPreset: nerd
 composer:
   shape: pi
@@ -44,7 +31,7 @@ composer:
 theme:
   light: moondust
   dark: github-base16
-setupVersion: 2
+setupVersion: 3
 statusLine:
   preset: custom
   leftSegments: []
@@ -67,3 +54,5 @@ secrets:
   enabled: true
 compaction:
   thresholdPercent: 70
+update:
+  auto: false
