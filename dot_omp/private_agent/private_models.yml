@@ -1,0 +1,12 @@
+# Why: Command Code's bundled catalog (`api-routes provider="commandcode"` in
+# pi-catalog behavior.kdl) sends `zai-org/GLM-5.3` to /responses, but that lane
+# rejects omp's input items with 400 "input item is missing type" — omp omits
+# `type: "message"` on user input items, which DeepSeek tolerates and GLM does
+# not. /chat/completions serves the same model today (verified 2026-11-18).
+# Remove this override once omp emits `type: "message"` on every Responses
+# input item, or the catalog moves the id off the Responses route.
+providers:
+  commandcode:
+    modelOverrides:
+      zai-org/GLM-5.3:
+        api: openai-completions
