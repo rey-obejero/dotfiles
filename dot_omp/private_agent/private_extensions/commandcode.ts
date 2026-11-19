@@ -7,7 +7,7 @@
  * probes, not just the active chat model.
  *
  * ZDR state is per session: `CMD_ZDR=1` seeds a new session as enabled and an
- * unset/`0` value seeds it disabled. A `/cmdc zdr` change overrides that choice
+ * unset/`0` value seeds it disabled. A `/cmd zdr` change overrides that choice
  * for the current session only; nothing is written to disk. Subagent requests
  * inherit the root session's choice.
  *
@@ -15,13 +15,13 @@
  * (`cmd_zdr_no_providers`) rather than falling back, and routing may change
  * cost.
  *
- * `/cmdc` is the single Command Code command:
+ * `/cmd` is the single Command Code command:
  *
- *   /cmdc                 subcommand list, no network
- *   /cmdc zdr [on|off]    this session's ZDR status, or an explicit change
- *   /cmdc usage           fullscreen account view: 5-hour, weekly and monthly
- *                         limits, balance and period, then the billing period's
- *                         requests, tokens and spend
+ *   /cmd usage           fullscreen account view: 5-hour, weekly and monthly
+ *                        limits, balance and period, then the billing period's
+ *                        requests, tokens and spend
+ *   /cmd zdr on|off      change this session's ZDR choice
+ *   /cmd zdr status      show the current state (bare `/cmd zdr` works too)
  *
  * `usage` reads the account's `/alpha/*` routes with the stored Command Code
  * key and reports the account's billing period, not this session's tokens.
@@ -47,7 +47,6 @@ const SHORT_DATE = new Intl.DateTimeFormat(undefined, { month: "short", day: "nu
 
 interface ZdrState {
 	enabled: boolean;
-	source: "env" | "command";
 }
 
 const bySession = new Map<string, ZdrState>();
@@ -58,7 +57,7 @@ let activeSessionId: string | undefined;
 function stateFor(sessionId: string): ZdrState {
 	let state = bySession.get(sessionId);
 	if (!state) {
-		state = { enabled: process.env.CMD_ZDR === "1", source: "env" };
+		state = { enabled: process.env.CMD_ZDR === "1" };
 		bySession.set(sessionId, state);
 	}
 	return state;
@@ -89,10 +88,8 @@ function activate(ctx: ExtensionContext): ZdrState {
 	return stateFor(activeSessionId);
 }
 
-function describe(state: ZdrState): string {
-	const origin =
-		state.source === "env" ? `seeded by CMD_ZDR=${process.env.CMD_ZDR ?? "unset"}` : "set in this session";
-	return `zdr ${state.enabled ? "on" : "off"} (${origin})`;
+function statusLine(state: ZdrState): string {
+	return `Command Code ZDR: ${state.enabled ? "On" : "Off"}.`;
 }
 
 function installFetchWrapper(): void {
@@ -641,14 +638,15 @@ async function showAccountView(ctx: ExtensionContext): Promise<void> {
 // ─── Command ────────────────────────────────────────────────────────────────
 
 const USAGE = [
-	"Usage: /cmdc [zdr | usage]",
-	"  zdr    per-session zero-data-retention headers",
-	"  usage  account view: limits, balance and spend",
-	"         for the current billing period (alias: quota)",
+	"Usage: /cmd <subcommand>",
+	"  usage       account view: limits, balance and spend for the current billing period",
+	"  zdr on      enforce zero-data-retention headers for this session",
+	"  zdr off     send untagged requests (default)",
+	"  zdr status  show the current state",
 ].join("\n");
 
 const ZDR_USAGE = [
-	"Usage: /cmdc zdr [on|off|status]",
+	"Usage: /cmd zdr [on|off|status]",
 	"  on      enforce zero-data-retention headers for this session",
 	"  off     send untagged requests (default)",
 	"  status  show the current state",
@@ -656,28 +654,25 @@ const ZDR_USAGE = [
 
 /**
  * omp's argument completion is prefix-of-the-whole-args: the provider gets
- * `commandText` after `"/cmdc "` verbatim (`""`, `"zdr"`, `"zdr o"`), and on
+ * `commandText` after `"/cmd "` verbatim (`""`, `"zdr"`, `"zdr o"`), and on
  * acceptance the editor replaces *that whole string* with the item's `value`
  * (see `autocomplete.ts` `applyCompletion` → `beforePrefix + item.value`).
  *
  * So the completion model is: match the current arguments as a filter, but
- * hand back the **complete text to type** — `zdr`, `zdr on`, `usage` — never a
- * word-level suffix like `on`. `label` is display-only.
+ * hand back the **complete text to type** — `usage`, `zdr on`, `zdr off`,
+ * `zdr status` — never a word-level suffix like `on`. `label` is display-only.
  */
 function argumentCompletions(prefix: string) {
 	const query = prefix.trim().toLowerCase();
 	const options = [
-		{ value: "zdr", description: "zero-data-retention headers for this session" },
+		{ value: "usage", description: "account view: limits, balance, spend" },
 		{ value: "zdr on", description: "enforce ZDR on Command Code requests" },
 		{ value: "zdr off", description: "send Command Code requests untagged" },
 		{ value: "zdr status", description: "show this session's ZDR state" },
-		{ value: "usage", description: "account view: limits, balance, spend" },
 	];
-	// `zdr` is a submenu head: it matches its own entry (status is implied),
-	// and when one or more `zdr …` leaves exist, `zdr` itself stays selectable.
-	const matches = (query === "" ? options : options.filter(option => option.value.startsWith(query))).map(
-		option => ({ value: option.value, label: option.value, description: option.description }),
-	);
+	const matches = options
+		.filter(option => option.value.startsWith(query))
+		.map(option => ({ value: option.value, label: option.value, description: option.description }));
 	return matches.length > 0 ? matches : null;
 }
 
@@ -686,17 +681,15 @@ function handleZdr(argument: string, ctx: ExtensionContext): void {
 	switch (argument) {
 		case "":
 		case "status":
-			ctx.ui.notify(describe(state), "info");
+			ctx.ui.notify(statusLine(state), "info");
 			return;
 		case "on":
 			state.enabled = true;
-			state.source = "command";
-			ctx.ui.notify(describe(state), "warning");
+			ctx.ui.notify(statusLine(state), "warning");
 			return;
 		case "off":
 			state.enabled = false;
-			state.source = "command";
-			ctx.ui.notify(describe(state), "info");
+			ctx.ui.notify(statusLine(state), "info");
 			return;
 		default:
 			ctx.ui.notify(ZDR_USAGE, "warning");
@@ -727,7 +720,7 @@ export default function commandcode(pi: ExtensionAPI): void {
 		}
 	});
 
-	pi.registerCommand("cmdc", {
+	pi.registerCommand("cmd", {
 		description: "Command Code: session ZDR state and account usage",
 		getArgumentCompletions: argumentCompletions,
 		handler: async (args, ctx) => {

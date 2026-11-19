@@ -8,7 +8,7 @@ file's default export is a factory that receives the extension API.
 
 | Extension | Command | What it does |
 | --- | --- | --- |
-| `commandcode.ts` | `/cmdc` | Per-session zero-data-retention headers; billing-period account usage |
+| `commandcode.ts` | `/cmd` | Per-session zero-data-retention headers; billing-period account usage |
 | `yolo.ts` | `/yolo` | Runtime-only approval mode override |
 
 The remaining extensions (`dsh-statusline.ts`, `notifications.ts`,

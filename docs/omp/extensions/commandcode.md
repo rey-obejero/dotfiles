@@ -1,6 +1,6 @@
 # OMP extension: commandcode
 
-`/cmdc` — one command covering Command Code session state (zero-data-retention
+`/cmd` — one command covering Command Code session state (zero-data-retention
 headers) and account usage for the current billing period.
 
 ## Files
@@ -14,7 +14,7 @@ headers) and account usage for the current billing period.
 ZDR state is per session and lives in memory only. A new session is seeded from
 the environment: `CMD_ZDR=1` starts it enabled, anything else (including unset)
 starts it disabled. `CMD_ZDR` is read at session start, not set by this
-extension or any file this repo manages. Changes made with `/cmdc zdr on` /
+extension or any file this repo manages. Changes made with `/cmd zdr on` /
 `off` apply to the current session only and are never written to disk; subagent
 requests inherit the root session's choice.
 
@@ -29,18 +29,20 @@ A model with no ZDR-capable upstream fails with HTTP 422
 
 ## Commands
 
-### `/cmdc`
+### `/cmd`
 
-Prints the subcommand list. No network call.
+Prints the subcommand list, in this order: `usage`, `zdr on`, `zdr off`,
+`zdr status`. No network call.
 
-### `/cmdc zdr [on|off|status]`
+### `/cmd zdr [on|off|status]`
 
-With no argument or `status`, reports the current session's state. `on` and
-`off` set it for this session only. Every other argument — including `toggle`,
-which the previous `/commandcode-zdr` command accepted — prints the usage line.
-There is no keyboard shortcut.
+`on` and `off` set the choice for this session only; `status`, or a bare
+`/cmd zdr`, reports the current state. Every form prints the same one-line
+message, e.g. `Command Code ZDR: On.` / `Command Code ZDR: Off.` Every other
+argument — including `toggle`, which the previous `/commandcode-zdr` command
+accepted — prints the usage line. There is no keyboard shortcut.
 
-### `/cmdc usage`
+### `/cmd usage`
 
 Fullscreen panel showing, top to bottom:
 
@@ -57,7 +59,7 @@ accounts see no 5h/7d rows at all, and a failed endpoint contributes a line like
 `credits  unavailable (key rejected (HTTP 401))` instead of zeroing the bars.
 
 `quota` is accepted as an alias for `usage`. The snapshot is memoized for 30
-seconds, so `/cmdc usage` immediately after `/cmdc quota` costs one round trip;
+seconds, so `/cmd usage` immediately after `/cmd quota` costs one round trip;
 `r` refetches in place and re-baselines the `checked … ago` header.
 
 `Esc`, `q`, or `Enter` closes. Fullscreen on the alternate screen; the
@@ -89,4 +91,4 @@ forwarded to them.
 `dsh-statusline.ts` shows this session's token and cost statistics from the
 session manager; it does not read the account data this extension drafts from
 the Command Code API. For per-session totals use that widget's numbers; for
-account-wide billing use `/cmdc usage`.
+account-wide billing use `/cmd usage`.
