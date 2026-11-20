@@ -79,6 +79,7 @@
 		"thinkingMax": "gray9",
 		"bashMode": "blue6",
 		"pythonMode": "blue7",
+		"btwMode": "blue4",
 		"statusLineBg": "gray0",
 		"statusLineSep": "gray3",
 		"statusLineModel": "gray9",

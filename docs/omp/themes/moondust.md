@@ -14,11 +14,10 @@ OMP uses the Moondust light palette in the `light` theme slot.
 ```yaml
 theme:
   light: moondust
-  dark: github-base16
+  dark: moondust
 ```
 
-Only the light slot is Moondust. The dark slot intentionally remains the prior
-GitHub theme; set both slots to `moondust` if you want it regardless of terminal
+Both slots use Moondust so the theme applies regardless of terminal
 appearance.
 
 ## Role map
@@ -30,6 +29,7 @@ appearance.
 | Dim / comments | `#8E979F` |
 | Accent / links / strings | `#1F639E` |
 | Border | `#D7DCDF` |
+| Btw-mode border | `#65A4D7` |
 | Selection | `#E2EFF8` |
 | Status line background | `#F6F7F8` |
 | User/tool panel | `#F6F7F8` |
