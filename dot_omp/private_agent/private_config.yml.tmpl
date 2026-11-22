@@ -1,9 +1,11 @@
 modelRoles:
   default: "{{ .omp_model_default }}"
   slow: "{{ .omp_model_slow }}"
+  smol: "{{ .omp_model_smol }}"
 cycleOrder:
   - default
   - slow
+  - smol
 prewalk:
   enabled: false
 advisor:
@@ -20,10 +22,9 @@ memory:
   backend: mnemopi
 retry:
   fallbackChains:
-    default:
-      - "{{ .omp_default_model_fallback }}"
-    slow:
-      - "{{ .omp_slow_model_fallback }}"
+    default:{{ if .omp_default_model_fallback }} ["{{ .omp_default_model_fallback }}"]{{ else }} []{{ end }}
+    slow:{{ if .omp_slow_model_fallback }} ["{{ .omp_slow_model_fallback }}"]{{ else }} []{{ end }}
+    smol:{{ if .omp_smol_model_fallback }} ["{{ .omp_smol_model_fallback }}"]{{ else }} []{{ end }}
 symbolPreset: nerd
 composer:
   shape: pi

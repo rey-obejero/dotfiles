@@ -16,14 +16,19 @@ opencode_model_plan = "{{ promptStringOnce . "opencode_model_plan" "Model for th
 opencode_model_build = "{{ promptStringOnce . "opencode_model_build" "Model for the build agent? (empty = default)" "" }}"
 
 # Default OMP model for normal turns.
-omp_model_default = "{{ promptStringOnce . "omp_model_default" "Default OMP model (full selector)?" "commandcode/deepseek/deepseek-v4.1-flash:low" }}"
+omp_model_default = "{{ promptStringOnce . "omp_model_default" "Default OMP model (full selector)?" "commandcode/deepseek/deepseek-v4.1-flash:high" }}"
 
 # Slow/plan model.
-omp_model_slow = "{{ promptStringOnce . "omp_model_slow" "Slow/plan OMP model (full selector)?" "commandcode/deepseek/deepseek-v4.1-flash:high" }}"
+omp_model_slow = "{{ promptStringOnce . "omp_model_slow" "Slow/plan OMP model (full selector)?" "commandcode/zai-org/GLM-5.3:high" }}"
 
-# Fallback models, tried when a role's model fails.
-omp_default_model_fallback = "{{ promptStringOnce . "omp_default_model_fallback" "Default role fallback model (full selector)?" "commandcode/z-ai/glm-5.3-flash" }}"
-omp_slow_model_fallback = "{{ promptStringOnce . "omp_slow_model_fallback" "Slow role fallback model (full selector)?" "commandcode/z-ai/glm-5.3-flash" }}"
+# Fast model for lightweight work (title, commit, memory, ...).
+omp_model_smol = "{{ promptStringOnce . "omp_model_smol" "Fast (smol) OMP model (full selector)?" "commandcode/deepseek/deepseek-v4.1-flash:low" }}"
+
+# Fallback models, tried when a role's model fails. Leave empty to disable
+# fallbacks for that role (rendered as an empty chain, not an empty entry).
+omp_default_model_fallback = "{{ promptStringOnce . "omp_default_model_fallback" "Default role fallback model? (empty = no fallback)" "" }}"
+omp_slow_model_fallback = "{{ promptStringOnce . "omp_slow_model_fallback" "Slow role fallback model? (empty = no fallback)" "" }}"
+omp_smol_model_fallback = "{{ promptStringOnce . "omp_smol_model_fallback" "Fast (smol) role fallback model? (empty = no fallback)" "" }}"
 
 # --- Eclipse JDT Language Server ---
 {{ $jdtls_auto := promptBoolOnce . "jdtls_auto" "Install `jdtls` automatically to ~/.local/share/jdtls/current? [Y/n] " true -}}
