@@ -10,16 +10,11 @@
  * dsh's segmented context bar is intentionally omitted: it needs a full row of
  * its own, and this footer is deliberately one line.
  *
- * Vim mode has no public extension source and is handled read-only: the
- * editor's `vimMode`/`vimPending`/`vimSelectedLines`/`vimEnabled` getters are
- * wrapped (`installVimProbe`); the host already reads them on every change.
- * If the getters move, the label is omitted.
+ * Vim mode is not read: the 19.2.0 pi-tui migration removed the CustomEditor
+ * class and the composer exposes no mode getter to extensions. The composer
+ * border color and cursor shape still report the mode.
  */
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { CustomEditor } from "@oh-my-pi/pi-tui/prompt/custom-editor";
-import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
 
 const WIDGET_KEY = "dsh-statusline";
 const SEP = " · ";
@@ -29,15 +24,7 @@ type StatusColor = "muted" | "text" | "accent" | "success" | "warning" | "error"
 type FgTheme = { fg(color: StatusColor, text: string): string };
 type ModelCost = NonNullable<ExtensionContext["model"]>["cost"];
 
-export interface VimSnapshot {
-	enabled: boolean;
-	mode: string;
-	pending: string;
-	selectedLines: number;
-}
-
 export interface FooterSnapshot {
-	vim?: VimSnapshot;
 	model?: string;
 	effort?: string;
 	cacheRate?: string;
@@ -47,27 +34,8 @@ export interface FooterSnapshot {
 	context?: { used: number; window: number; percent: number };
 }
 
-const vim: VimSnapshot = { enabled: false, mode: "insert", pending: "", selectedLines: 0 };
-let hostUi: { requestRender?(): void } | undefined;
 let currentCtx: ExtensionContext | undefined;
 let registered = false;
-
-const patchedEditors = new WeakSet<object>();
-
-/** The probe runs inside a host getter; repaint after it returns. */
-function requestHostRender(): void {
-	queueMicrotask(() => hostUi?.requestRender?.());
-}
-
-/** `tui.vimMode` from the live config; the probe only reports after the first change. */
-function vimEnabledFromConfig(): boolean {
-	try {
-		return /^\s*vimMode:\s*true\s*$/m.test(readFileSync(join(homedir(), ".omp/agent/config.yml"), "utf8"));
-	} catch {
-		return false;
-	}
-}
-vim.enabled = vimEnabledFromConfig();
 
 // ── formatting ────────────────────────────────────────────────────────────
 
@@ -148,14 +116,6 @@ function padTo(text: string, width: number): string {
 
 // ── row ──────────────────────────────────────────────────────────────────
 
-const VIM_LABELS = {
-	insert: ["INSERT", "success"],
-	normal: ["NORMAL", "accent"],
-	visual: ["VISUAL", "warning"],
-	"visual-line": ["V-LINE", "warning"],
-	replace: ["REPLACE", "accent"],
-} as const satisfies Record<string, readonly [string, StatusColor]>;
-
 interface Part {
 	key: string;
 	text: string;
@@ -171,14 +131,6 @@ export function renderFields(snapshot: FooterSnapshot, width: number, theme: FgT
 	const right: Part[] = [];
 	const muted = (text: string): string => theme.fg("muted", text);
 
-	if (snapshot.vim?.enabled) {
-		const style = VIM_LABELS[snapshot.vim.mode as keyof typeof VIM_LABELS];
-		const label = style?.[0] ?? snapshot.vim.mode.toUpperCase();
-		const color = style?.[1] ?? "muted";
-		const selected = snapshot.vim.selectedLines > 1 ? ` ${snapshot.vim.selectedLines}L` : "";
-		const pending = snapshot.vim.pending ? ` ${muted(snapshot.vim.pending)}` : "";
-		left.push({ key: "vim", text: `${theme.fg(color, `${label}${selected}`)}${pending}` });
-	}
 	if (snapshot.model) left.push({ key: "model", text: theme.fg("text", snapshot.model) });
 	if (snapshot.effort) left.push({ key: "effort", text: muted(snapshot.effort) });
 	if (snapshot.cacheRate !== undefined) {
@@ -221,7 +173,7 @@ export function renderFields(snapshot: FooterSnapshot, width: number, theme: FgT
 		}
 	}
 
-	// Then drop the optional metrics, keeping vim and model.
+	// Then drop the optional metrics, keeping model.
 	for (const key of ["cost", "cache", "effort"]) {
 		if (state.ok) break;
 		const index = left.findIndex(part => part.key === key);
@@ -280,7 +232,6 @@ function buildSnapshot(pi: ExtensionAPI, ctx: ExtensionContext): FooterSnapshot 
 	const contextUsage = ctx.getContextUsage();
 	const cacheTotal = usage.input + usage.cacheRead + usage.cacheWrite;
 	return {
-		vim: vim.enabled ? { ...vim } : undefined,
 		model: ctx.model?.name ?? ctx.model?.id,
 		effort: pi.getThinkingLevel(),
 		cacheRate: cacheTotal > 0 ? `${((usage.cacheRead / cacheTotal) * 100).toFixed(1)}%` : undefined,
@@ -297,84 +248,18 @@ function buildSnapshot(pi: ExtensionAPI, ctx: ExtensionContext): FooterSnapshot 
 	};
 }
 
-// ── vim probe ─────────────────────────────────────────────────────────────
-
-/** Wrap the editor's vim getters read-only so the footer can see the mode. */
-function installVimProbe(ctx: ExtensionContext): void {
-	const factory = ctx.ui.getEditorComponent();
-	const prototype: unknown = factory ? Reflect.get(factory, "prototype") : CustomEditor.prototype;
-	if (typeof prototype !== "object" || prototype === null || patchedEditors.has(prototype)) return;
-
-	const wrap = (key: string, apply: (value: unknown) => void): void => {
-		let owner: object | null = prototype;
-		let descriptor: PropertyDescriptor | undefined;
-		while (owner && !(descriptor = Object.getOwnPropertyDescriptor(owner, key))) owner = Object.getPrototypeOf(owner);
-		if (!descriptor?.get) return;
-		const original = descriptor.get;
-		Object.defineProperty(prototype, key, {
-			configurable: true,
-			enumerable: descriptor.enumerable,
-			get(this: unknown) {
-				const value: unknown = original.call(this);
-				try {
-					apply(value);
-				} catch {
-					// A probe must never disturb the editor.
-				}
-				return value;
-			},
-		});
-	};
-
-	wrap("vimEnabled", value => {
-		if (value !== true || vim.enabled) return;
-		vim.enabled = true;
-		requestHostRender();
-	});
-	wrap("vimMode", value => {
-		const next = typeof value === "string" ? value : String(value);
-		if (next === vim.mode) return;
-		vim.mode = next;
-		requestHostRender();
-	});
-	wrap("vimPending", value => {
-		const next = typeof value === "string" ? value : "";
-		if (next === vim.pending) return;
-		vim.pending = next;
-		requestHostRender();
-	});
-	wrap("vimSelectedLines", value => {
-		const next = typeof value === "number" ? value : 0;
-		if (next === vim.selectedLines) return;
-		vim.selectedLines = next;
-		requestHostRender();
-	});
-	patchedEditors.add(prototype);
-}
-
 // ── extension ─────────────────────────────────────────────────────────────
-
-function renderHost(ui: unknown): { requestRender?(): void } | undefined {
-	if (typeof ui !== "object" || ui === null) return undefined;
-	const request = Reflect.get(ui, "requestRender");
-	return typeof request === "function" ? { requestRender: () => Reflect.apply(request, ui, []) } : undefined;
-}
 
 function ensure(pi: ExtensionAPI, ctx: ExtensionContext): void {
 	if (ctx.agent.kind !== "main") return;
 	currentCtx = ctx;
-	vim.enabled = vimEnabledFromConfig();
 	if (registered) return;
 	registered = true;
-	installVimProbe(ctx);
 	ctx.ui.setWidget(
 		WIDGET_KEY,
-		(widgetUi, theme) => {
-			hostUi = renderHost(widgetUi);
-			return {
-				render: (width: number): readonly string[] => renderFooter(buildSnapshot(pi, currentCtx!), width, theme),
-			};
-		},
+		(_ui, theme) => ({
+			render: (width: number): readonly string[] => renderFooter(buildSnapshot(pi, currentCtx!), width, theme),
+		}),
 		{ placement: "belowEditor" },
 	);
 }

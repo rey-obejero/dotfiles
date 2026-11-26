@@ -26,11 +26,12 @@
  * `usage` reads the account's `/alpha/*` routes with the stored Command Code
  * key and reports the account's billing period, not this session's tokens.
  */
-import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, ExtensionTheme } from "@oh-my-pi/pi-coding-agent";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { OverlayPanel, PanelDivider, PanelRows } from "@oh-my-pi/pi-tui/chrome/overlay-box";
+import { decodeKey } from "@oh-my-pi/pi-tui/driver/input/keys";
+import { padTo, truncate, visibleWidth } from "@oh-my-pi/pi-tui/text/width";
 import { formatDuration } from "@oh-my-pi/pi-utils";
 
 
@@ -404,6 +405,28 @@ function row(label: string, barText: string, detail: string, style: Style): stri
 	return `${style.fg("muted", label.padEnd(8))}${barText}  ${detail}`;
 }
 
+function frameTop(width: number, title: string, theme: ExtensionTheme): string {
+	const box = theme.symbols.box;
+	const inner = Math.max(0, width - 2);
+	if (width < 4) return truncate(box.topLeft + box.horizontal.repeat(inner) + box.topRight, Math.max(0, width));
+	const shown = truncate(` ${title} `, Math.max(0, inner - 2));
+	const fill = Math.max(0, inner - 1 - visibleWidth(shown));
+	return (
+		theme.fg("border", box.topLeft + box.horizontal) +
+		theme.bold(theme.fg("accent", shown)) +
+		theme.fg("border", box.horizontal.repeat(fill) + box.topRight)
+	);
+}
+
+function frameRow(content: string, width: number, theme: ExtensionTheme): string {
+	if (width < 4) return truncate(content, Math.max(0, width));
+	const box = theme.symbols.box;
+	const inner = width - 4;
+	return `${theme.fg("border", box.vertical)} ${padTo(truncate(content, inner), inner)} ${theme.fg("border", box.vertical)}`;
+}
+
+const KEY_CONTEXT = { kitty: false, backspaceIsCtrl: false } as const;
+
 /**
  * Fullscreen account panel, matching the built-in `/usage` dashboard: the
  * overlay borrows the alternate screen (`fullscreen: true`), so the transcript
@@ -422,88 +445,76 @@ async function fullscreenAccountView(
 	}
 
 	await ctx.ui.custom<void>(
-		(tui, theme, keybindings, done) => {
+		(ui, theme, keybindings, done) => {
 			const source: string[] = [...build(theme)];
-			const panel = new OverlayPanel(title);
-			const header = new PanelRows();
-			header.setHeight(1);
-			const body = new PanelRows();
-			const footer = new PanelRows();
-			footer.setHeight(1);
-			panel.addChild(header);
-			panel.addChild(body);
-			panel.addChild(new PanelDivider());
-			panel.addChild(footer);
-
 			let scroll = 0;
-			let viewportRows = 0;
-			let contentRows = 5;
 			// Freshness baseline is when the data was fetched, not when the
 			// panel opened — same anchor the built-in dashboard uses.
 			let renderAt = memo?.at;
-			const apply = (): void => {
-				// The alternate screen has no scrollback: pad with empty rows so
-				// the content stays pinned to the top and the rule/footer sit
-				// at the pane bottom no matter how long the content is.
-				const padded = [...source, ...new Array(Math.max(0, viewportRows - source.length)).fill("")];
-				body.setLines(padded.slice(scroll, scroll + contentRows));
-				body.setHeight(contentRows);
-				header.setLines([
-					renderAt === undefined
-						? ""
-						: theme.fg("muted", `checked ${formatDuration(Math.max(0, Date.now() - renderAt))} ago`),
-				]);
-				const hintParts = [
-					tui.terminal.rows > 18 && source.length > contentRows ? "↑/↓/pgup/pgdn scroll · " : "",
-					"r refresh · ",
-					"esc / q close",
-				];
-				footer.setLines([theme.fg("muted", hintParts.join(""))]);
+			const contentRows = (): number => Math.max(1, ui.size().rows - 5);
+			const clampScroll = (): void => {
+				scroll = Math.max(0, Math.min(scroll, Math.max(0, source.length - contentRows())));
 			};
 
 			return {
 				render: (width: number) => {
 					// Fixed chrome: top border, header, content…, divider, hint,
 					// bottom border — five rows of frame around the body.
-					contentRows = Math.max(5, tui.terminal.rows - 5);
-					const maxScroll = Math.max(0, source.length - contentRows);
-					scroll = Math.max(0, Math.min(scroll, maxScroll));
-					viewportRows = maxScroll > 0 ? source.length : contentRows;
-					apply();
-					return panel.render(width);
+					clampScroll();
+					const height = contentRows();
+					const body = source.slice(scroll, scroll + height);
+					while (body.length < height) body.push("");
+					const header =
+						renderAt === undefined
+							? ""
+							: theme.fg("muted", `checked ${formatDuration(Math.max(0, Date.now() - renderAt))} ago`);
+					const hints = [
+						ui.size().rows > 18 && source.length > height ? "↑/↓/pgup/pgdn scroll · " : "",
+						"r refresh · ",
+						"esc / q close",
+					].join("");
+					const box = theme.symbols.box;
+					return [
+						frameTop(width, title, theme),
+						frameRow(header, width, theme),
+						...body.map(line => frameRow(line, width, theme)),
+						theme.fg("border", box.teeRight + box.horizontal.repeat(Math.max(0, width - 2)) + box.teeLeft),
+						frameRow(theme.fg("muted", hints), width, theme),
+						theme.fg("border", box.bottomLeft + box.horizontal.repeat(Math.max(0, width - 2)) + box.bottomRight),
+					];
 				},
-				invalidate: () => panel.invalidate(),
 				handleInput: (data: string) => {
-					if (keybindings.matches(data, "tui.select.cancel") || data === "q" || data === "\r" || data === "\n") {
+					const key = decodeKey(data, KEY_CONTEXT);
+					if (key === null) return;
+					if (keybindings.matches(key, "tui.select.cancel") || key.id === "q" || key.id === "enter") {
 						done(undefined);
 						return;
 					}
-					if (data === "r") {
-						// Kick off a refetch; apply() re-runs on the next render
-						// frame and reports the memo's age from the new snapshot.
+					if (key.id === "r") {
+						// Kick off a refetch; the rows repaint with the new snapshot
+						// age from the memo.
 						void loadDashboard(ctx).then(fresh => {
 							if (fresh === undefined) return;
 							source.length = 0;
 							source.push(...build(theme));
 							renderAt = memo?.at;
-							apply();
+							clampScroll();
+							ui.requestRender();
 						});
 						return;
 					}
+					const height = contentRows();
 					const before = scroll;
-					if (keybindings.matches(data, "tui.select.up")) scroll -= 1;
-					else if (keybindings.matches(data, "tui.select.down")) scroll += 1;
-					else if (keybindings.matches(data, "tui.select.pageUp")) scroll -= contentRows;
-					else if (keybindings.matches(data, "tui.select.pageDown")) scroll += contentRows;
-					scroll = Math.max(0, Math.min(scroll, Math.max(0, source.length - contentRows)));
-					if (scroll !== before) apply();
+					if (keybindings.matches(key, "tui.select.up")) scroll -= 1;
+					else if (keybindings.matches(key, "tui.select.down")) scroll += 1;
+					else if (keybindings.matches(key, "tui.select.pageUp")) scroll -= height;
+					else if (keybindings.matches(key, "tui.select.pageDown")) scroll += height;
+					clampScroll();
+					if (scroll !== before) ui.requestRender();
 				},
 			};
 		},
-		{
-			overlay: true,
-			overlayOptions: { anchor: "bottom-center", width: "100%", maxHeight: "100%", margin: 0, fullscreen: true },
-		},
+		{ overlay: true, fullscreen: true },
 	);
 }
 

@@ -16,7 +16,8 @@
  * body (OSC 99) still render the one-line form.
  */
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
-import { TERMINAL } from "@oh-my-pi/pi-tui";
+import { detectTerminal } from "@oh-my-pi/pi-tui/driver/caps/detect";
+import { type NotificationTarget, sendNotification } from "@oh-my-pi/pi-tui/driver/notify";
 
 const PREFIX = "omp";
 const SEP = " · ";
@@ -30,8 +31,24 @@ function line(title: string, body?: string): string {
 	return body ? `${PREFIX}${SEP}${title}: ${body}` : `${PREFIX}${SEP}${title}`;
 }
 
+const NOTIFICATION_TARGET: NotificationTarget = (() => {
+	const detected = detectTerminal(process.env, { platform: process.platform });
+	return {
+		protocol: detected.identity.notify,
+		rich: detected.identity.richNotifications,
+		env: process.env,
+		write: data => {
+			try {
+				process.stdout.write(data);
+			} catch {
+				// Best effort: a closed stdout must not fail the event handler.
+			}
+		},
+	};
+})();
+
 function notify(text: string, type: string): void {
-	TERMINAL.sendNotification({ body: text, type, actions: "focus" });
+	sendNotification({ body: text, type, actions: "focus" }, NOTIFICATION_TARGET);
 }
 
 /** Plain-text preview; notification daemons may interpret raw Markdown headings. */
