@@ -13,8 +13,13 @@
  * Vim mode is not read: the 19.2.0 pi-tui migration removed the CustomEditor
  * class and the composer exposes no mode getter to extensions. The composer
  * border color and cursor shape still report the mode.
+ *
+ * The footer is a rows canvas. pi-tui caches its rows and repaints them only
+ * when the widget host calls `requestRender`; omp exposes no model or
+ * thinking-level change event to extensions, so the widget samples the session
+ * every 250 ms and repaints only when the sampled snapshot changes.
  */
-import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, ExtensionUiHost } from "@oh-my-pi/pi-coding-agent";
 
 const WIDGET_KEY = "dsh-statusline";
 const SEP = " · ";
@@ -36,6 +41,11 @@ export interface FooterSnapshot {
 
 let currentCtx: ExtensionContext | undefined;
 let registered = false;
+let widgetUi: ExtensionUiHost | undefined;
+let lastSignature: string | undefined;
+
+/** How often the widget samples the session for values a repaint should reflect. */
+const REFRESH_MS = 250;
 
 // ── formatting ────────────────────────────────────────────────────────────
 
@@ -250,18 +260,36 @@ function buildSnapshot(pi: ExtensionAPI, ctx: ExtensionContext): FooterSnapshot 
 
 // ── extension ─────────────────────────────────────────────────────────────
 
+function mount(pi: ExtensionAPI, ctx: ExtensionContext): void {
+	ctx.ui.setWidget(
+		WIDGET_KEY,
+		(ui, theme) => {
+			widgetUi = ui;
+			return {
+				render: (width: number): readonly string[] => renderFooter(buildSnapshot(pi, currentCtx!), width, theme),
+			};
+		},
+		{ placement: "belowEditor" },
+	);
+}
+
+/** A rows canvas repaints only on requestRender; request one when the rendered values changed. */
+function refresh(pi: ExtensionAPI): void {
+	const ctx = currentCtx;
+	if (!ctx || !widgetUi) return;
+	const signature = JSON.stringify(buildSnapshot(pi, ctx));
+	if (signature === lastSignature) return;
+	lastSignature = signature;
+	widgetUi.requestRender();
+}
+
 function ensure(pi: ExtensionAPI, ctx: ExtensionContext): void {
 	if (ctx.agent.kind !== "main") return;
 	currentCtx = ctx;
 	if (registered) return;
 	registered = true;
-	ctx.ui.setWidget(
-		WIDGET_KEY,
-		(_ui, theme) => ({
-			render: (width: number): readonly string[] => renderFooter(buildSnapshot(pi, currentCtx!), width, theme),
-		}),
-		{ placement: "belowEditor" },
-	);
+	mount(pi, ctx);
+	ctx.setInterval(() => refresh(pi), REFRESH_MS);
 }
 
 export default function dshStatusline(pi: ExtensionAPI): void {
